@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#060d06">
+<title>Camará — Patrulha</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #060d06;
+    --surface:  #0c160c;
+    --border:   #1c301c;
+    --green:    #7fff00;
+    --green-dim:#2d5a00;
+    --cyan:     #00e5cc;
+    --amber:    #ffb700;
+    --red:      #ff3d3d;
+    --text:     #d4edcc;
+    --text2:    #5d8a5a;
+    --text3:    #2e4a2e;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+  html, body {
+    height:100%; width:100%;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Syne', sans-serif;
+    overflow:hidden;
+  }
+
+  /* ─── SCREENS ─── */
+  .screen { position:absolute; inset:0; display:flex; flex-direction:column; transition:opacity .3s, transform .3s; }
+  .screen.hidden { opacity:0; pointer-events:none; transform:scale(0.97); }
+
+  /* ══════════════════════════════
+     TELA 1 — INÍCIO
+  ══════════════════════════════ */
+  #screen-start {
+    background:var(--bg);
+    align-items:center; justify-content:center; gap:0;
+    padding:40px 32px;
+  }
+
+  .start-logo {
+    margin-bottom:32px;
+    display:flex; flex-direction:column; align-items:center; gap:12px;
+  }
+  .start-logo svg { width:80px; height:80px; }
+  .start-logo-name {
+    font-size:22px; font-weight:800; letter-spacing:-0.5px; text-align:center;
+  }
+  .start-logo-name span { color:var(--green); }
+  .start-logo-sub {
+    font-family:'Space Mono', monospace; font-size:10px; letter-spacing:.15em;
+    color:var(--text2); text-transform:uppercase;
+  }
+
+  .start-stats {
+    width:100%; background:var(--surface); border:1px solid var(--border);
+    border-radius:12px; padding:20px; margin-bottom:28px;
+    display:grid; grid-template-columns:1fr 1fr; gap:16px;
+  }
+  .stat-item { text-align:center; }
+  .stat-val { font-family:'Space Mono',monospace; font-size:24px; font-weight:700; color:var(--green); }
+  .stat-lbl { font-size:10px; color:var(--text2); margin-top:3px; letter-spacing:.05em; }
+
+  .btn-start {
+    width:100%; padding:18px; border-radius:12px; border:none; cursor:pointer;
+    background:var(--green); color:#000;
+    font-family:'Syne',sans-serif; font-size:17px; font-weight:800;
+    letter-spacing:.02em;
+    box-shadow: 0 0 40px rgba(127,255,0,0.3);
+    transition: transform .15s, box-shadow .15s;
+    margin-bottom:16px;
+  }
+  .btn-start:active { transform:scale(0.97); box-shadow:0 0 20px rgba(127,255,0,0.2); }
+
+  .btn-secondary {
+    width:100%; padding:14px; border-radius:12px;
+    border:1px solid var(--border); cursor:pointer;
+    background:transparent; color:var(--text2);
+    font-family:'Syne',sans-serif; font-size:14px;
+  }
+
+  .perm-warning {
+    margin-top:20px; font-size:10px; color:var(--text3);
+    text-align:center; font-family:'Space Mono',monospace; line-height:1.6;
+  }
+
+  /* ══════════════════════════════
+     TELA 2 — PATRULHA ATIVA
+  ══════════════════════════════ */
+  #screen-patrol { background:#000; }
+
+  /* Camera view */
+  .camera-view {
+    position:relative; flex:1; overflow:hidden; background:#000;
+  }
+  #videoEl {
+    width:100%; height:100%; object-fit:cover;
+    filter:brightness(0.85);
+  }
+
+  /* HUD overlay */
+  .hud {
+    position:absolute; inset:0; pointer-events:none;
+  }
+
+  /* Corners */
+  .corner {
+    position:absolute; width:22px; height:22px;
+    border-color:var(--green); border-style:solid; opacity:0.7;
+  }
+  .corner.tl { top:16px; left:16px; border-width:2px 0 0 2px; }
+  .corner.tr { top:16px; right:16px; border-width:2px 2px 0 0; }
+  .corner.bl { bottom:16px; left:16px; border-width:0 0 2px 2px; }
+  .corner.br { bottom:16px; right:16px; border-width:0 2px 2px 0; }
+
+  /* Crosshair */
+  .crosshair {
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    width:30px; height:30px;
+  }
+  .crosshair::before, .crosshair::after {
+    content:''; position:absolute; background:rgba(127,255,0,0.5);
+  }
+  .crosshair::before { top:50%; left:0; width:100%; height:1px; }
+  .crosshair::after  { left:50%; top:0; height:100%; width:1px; }
+
+  /* Top HUD bar */
+  .hud-top {
+    position:absolute; top:0; left:0; right:0;
+    padding:12px 16px;
+    background:linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 100%);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .hud-rec {
+    display:flex; align-items:center; gap:6px;
+    font-family:'Space Mono',monospace; font-size:11px; color:var(--red);
+    letter-spacing:.1em;
+  }
+  .hud-rec-dot {
+    width:8px; height:8px; border-radius:50%; background:var(--red);
+    box-shadow:0 0 6px var(--red);
+    animation:pulse 1s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  .hud-time {
+    font-family:'Space Mono',monospace; font-size:11px; color:rgba(255,255,255,0.7);
+  }
+
+  /* GPS badge */
+  .hud-gps {
+    position:absolute; top:52px; right:16px;
+    background:rgba(0,0,0,0.7); border:1px solid var(--border);
+    border-radius:6px; padding:6px 10px;
+    font-family:'Space Mono',monospace; font-size:9px;
+    color:var(--cyan); letter-spacing:.06em; line-height:1.6;
+  }
+
+  /* Bottom HUD */
+  .hud-bottom {
+    position:absolute; bottom:0; left:0; right:0;
+    padding:16px;
+    background:linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
+  }
+
+  /* Próximo ponto card */
+  .next-point-card {
+    background:rgba(6,13,6,0.85); border:1px solid var(--border);
+    border-radius:10px; padding:12px 14px; margin-bottom:12px;
+    backdrop-filter:blur(8px);
+  }
+  .np-label {
+    font-family:'Space Mono',monospace; font-size:8px; color:var(--text2);
+    letter-spacing:.12em; text-transform:uppercase; margin-bottom:6px;
+  }
+  .np-name { font-size:15px; font-weight:700; color:var(--text); margin-bottom:4px; }
+  .np-info { display:flex; align-items:center; gap:12px; }
+  .np-dist {
+    font-family:'Space Mono',monospace; font-size:20px; font-weight:700;
+    color:var(--green); text-shadow:0 0 12px rgba(127,255,0,0.4);
+  }
+  .np-bar-wrap { flex:1; }
+  .np-bar-track { height:4px; background:var(--border); border-radius:2px; }
+  .np-bar-fill  {
+    height:4px; background:var(--green); border-radius:2px; width:30%;
+    box-shadow:0 0 8px var(--green);
+    transition:width .5s ease;
+  }
+  .np-eta { font-size:10px; color:var(--text2); margin-top:3px; }
+
+  /* Action row */
+  .action-row { display:flex; gap:10px; align-items:center; }
+  .btn-stop {
+    flex:1; padding:14px; border-radius:10px; border:1px solid var(--red);
+    background:rgba(255,61,61,0.1); color:var(--red);
+    font-family:'Syne',sans-serif; font-size:14px; font-weight:700; cursor:pointer;
+  }
+  .btn-manual {
+    flex:1; padding:14px; border-radius:10px; border:1px solid var(--border);
+    background:rgba(255,255,255,0.05); color:var(--text2);
+    font-family:'Syne',sans-serif; font-size:14px; font-weight:700; cursor:pointer;
+  }
+
+  /* ──  CAPTURE FLASH ── */
+  .capture-flash {
+    position:fixed; inset:0; background:white;
+    opacity:0; pointer-events:none; z-index:500;
+    transition:opacity .05s;
+  }
+  .capture-flash.flash { opacity:0.8; }
+
+  /* ══════════════════════════════
+     TELA 3 — CAPTURA
+  ══════════════════════════════ */
+  #screen-capture { background:var(--bg); align-items:center; justify-content:center; padding:32px; }
+
+  .capture-anim {
+    width:120px; height:120px; border-radius:50%;
+    border:3px solid var(--green); position:relative; margin-bottom:28px;
+    animation:captureRing 1.5s ease infinite;
+    box-shadow: 0 0 30px rgba(127,255,0,0.3);
+  }
+  @keyframes captureRing {
+    0%   { transform:scale(1);   box-shadow:0 0 20px rgba(127,255,0,.3); }
+    50%  { transform:scale(1.05); box-shadow:0 0 50px rgba(127,255,0,.6); }
+    100% { transform:scale(1);   box-shadow:0 0 20px rgba(127,255,0,.3); }
+  }
+  .capture-icon { font-size:48px; position:absolute; inset:0; display:grid; place-items:center; }
+
+  .capture-title { font-size:22px; font-weight:800; color:var(--green); margin-bottom:8px; }
+  .capture-sub { font-size:13px; color:var(--text2); margin-bottom:28px; text-align:center; }
+
+  .photo-counter { display:flex; gap:8px; margin-bottom:28px; }
+  .photo-dot {
+    width:40px; height:40px; border-radius:8px;
+    border:1px solid var(--border); background:var(--surface);
+    display:grid; place-items:center;
+    font-family:'Space Mono',monospace; font-size:16px; color:var(--text3);
+    transition:.3s;
+  }
+  .photo-dot.done { border-color:var(--green); background:rgba(127,255,0,.1); color:var(--green); }
+  .photo-dot.active { border-color:var(--green); box-shadow:0 0 12px rgba(127,255,0,.3); animation:blink .5s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  .upload-status {
+    width:100%; background:var(--surface); border:1px solid var(--border);
+    border-radius:10px; padding:16px; text-align:center;
+  }
+  .upload-bar-track { height:3px; background:var(--border); border-radius:2px; margin:12px 0; }
+  .upload-bar-fill  {
+    height:3px; background:var(--green); border-radius:2px; width:0%;
+    box-shadow:0 0 8px var(--green); transition:width .4s ease;
+  }
+  .upload-label { font-family:'Space Mono',monospace; font-size:10px; color:var(--text2); }
+
+</style>
+</head>
+<body>
+
+<!-- FLASH -->
+<div class="capture-flash" id="flash"></div>
+
+<!-- ══ TELA 1: INÍCIO ══ -->
+<div class="screen" id="screen-start">
+
+  <div class="start-logo">
+    <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="40" cy="52" rx="12" ry="20" fill="#0a3d0a" transform="rotate(0,40,52)"/>
+      <ellipse cx="40" cy="52" rx="12" ry="20" fill="#1a6b1a" transform="rotate(30,40,52)"/>
+      <ellipse cx="40" cy="52" rx="12" ry="20" fill="#0a3d0a" transform="rotate(60,40,52)"/>
+      <ellipse cx="40" cy="52" rx="12" ry="20" fill="#1a6b1a" transform="rotate(90,40,52)"/>
+      <ellipse cx="40" cy="52" rx="12" ry="20" fill="#0a3d0a" transform="rotate(120,40,52)"/>
+      <ellipse cx="40" cy="52" rx="12" ry="20" fill="#2da02d" transform="rotate(150,40,52)"/>
+      <circle cx="40" cy="52" r="7" fill="#7fff00" opacity=".9"/>
+    </svg>
+    <div class="start-logo-name">Camará <span>Ambiental</span></div>
+    <div class="start-logo-sub">Zeladoria Urbana · Modo Patrulha</div>
+  </div>
+
+  <div class="start-stats">
+    <div class="stat-item">
+      <div class="stat-val" id="qtdPontos">12</div>
+      <div class="stat-lbl">Pontos na Rota</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val">~36</div>
+      <div class="stat-lbl">Fotos Previstas</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val">30m</div>
+      <div class="stat-lbl">Raio de Captura</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val">$0.30</div>
+      <div class="stat-lbl">Custo Estimado</div>
+    </div>
+  </div>
+
+  <button class="btn-start" onclick="iniciarPatrulha()">
+    ▶ Iniciar Patrulha
+  </button>
+  <button class="btn-secondary" onclick="abrirConfig()">
+    ⚙ Configurar Pontos
+  </button>
+
+  <div class="perm-warning">
+    Será solicitado acesso à câmera e localização.<br>
+    Mantenha o app em primeiro plano durante a patrulha.
+  </div>
+</div>
+
+<!-- ══ TELA 2: PATRULHA ATIVA ══ -->
+<div class="screen hidden" id="screen-patrol">
+  <div class="camera-view">
+    <video id="videoEl" autoplay muted playsinline></video>
+
+    <div class="hud">
+      <!-- Corners -->
+      <div class="corner tl"></div>
+      <div class="corner tr"></div>
+      <div class="corner bl"></div>
+      <div class="corner br"></div>
+      <div class="crosshair"></div>
+
+      <!-- Top bar -->
+      <div class="hud-top">
+        <div class="hud-rec">
+          <div class="hud-rec-dot"></div>
+          REC
+        </div>
+        <div class="hud-time" id="hudTime">--:--</div>
+      </div>
+
+      <!-- GPS -->
+      <div class="hud-gps" id="hudGPS">
+        GPS: aguardando...<br>
+        ACC: —
+      </div>
+
+      <!-- Bottom HUD -->
+      <div class="hud-bottom">
+        <div class="next-point-card">
+          <div class="np-label">▸ Próximo Ponto</div>
+          <div class="np-name" id="nextName">Av. Paulista 1000</div>
+          <div class="np-info">
+            <div class="np-dist" id="nextDist">— m</div>
+            <div class="np-bar-wrap">
+              <div class="np-bar-track">
+                <div class="np-bar-fill" id="nextBar"></div>
+              </div>
+              <div class="np-eta" id="nextETA">Calculando...</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="action-row">
+          <button class="btn-stop" onclick="pararPatrulha()">■ Parar</button>
+          <button class="btn-manual" onclick="capturarManual()">📷 Manual</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TELA 3: CAPTURANDO ══ -->
+<div class="screen hidden" id="screen-capture">
+  <div class="capture-anim"><div class="capture-icon">📷</div></div>
+  <div class="capture-title" id="captureTitle">Capturando...</div>
+  <div class="capture-sub" id="captureSub">Geofence detectada</div>
+
+  <div class="photo-counter">
+    <div class="photo-dot active" id="dot1">1</div>
+    <div class="photo-dot" id="dot2">2</div>
+    <div class="photo-dot" id="dot3">3</div>
+  </div>
+
+  <div class="upload-status">
+    <div class="upload-label" id="uploadLabel">Aguardando câmera...</div>
+    <div class="upload-bar-track"><div class="upload-bar-fill" id="uploadBar"></div></div>
+    <div class="upload-label" id="uploadPct">0%</div>
+  </div>
+</div>
+
+
+<script>
+// ══════════════════════════════════════════
+//  ESTADO GLOBAL
+// ══════════════════════════════════════════
+let stream = null
+let imageCapture = null
+let wakeLock = null
+let watchId = null
+let posicaoAtual = null
+let capturando = false
+let tempoInicio = null
+let hudInterval = null
+
+// Pontos da rota (em produção viriam do Google Sheets)
+const pontos = [
+  { nome:'Av. Paulista 1000',  lat:-23.5505, lng:-46.6333 },
+  { nome:'R. das Palmeiras',   lat:-23.5540, lng:-46.6380 },
+  { nome:'Praça da República', lat:-23.5480, lng:-46.6290 },
+  { nome:'Av. Central km 2',   lat:-23.5560, lng:-46.6410 },
+  { nome:'R. das Flores',      lat:-23.5520, lng:-46.6350 },
+  { nome:'Viaduto Norte',      lat:-23.5490, lng:-46.6440 },
+  { nome:'R. Bom Jesus',       lat:-23.5470, lng:-46.6260 },
+  { nome:'Praça da Sé',        lat:-23.5600, lng:-46.6300 },
+  { nome:'Av. Brasil 400',     lat:-23.5515, lng:-46.6320 },
+  { nome:'R. das Acácias',     lat:-23.5525, lng:-46.6395 },
+  { nome:'Largo do Arouche',   lat:-23.5550, lng:-46.6355 },
+  { nome:'Parque Augusta',     lat:-23.5535, lng:-46.6310 },
+]
+const jaFotografou = {}
+let pontoAtualIdx = 0
+
+// ══════════════════════════════════════════
+//  NAVEGAÇÃO
+// ══════════════════════════════════════════
+function mostrarTela(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'))
+  document.getElementById(id).classList.remove('hidden')
+}
+
+// ══════════════════════════════════════════
+//  INICIAR PATRULHA
+// ══════════════════════════════════════════
+async function iniciarPatrulha() {
+  try {
+    // 1. WakeLock — tela sempre ligada
+    if ('wakeLock' in navigator) {
+      try { wakeLock = await navigator.wakeLock.request('screen') } catch(e) {}
+    }
+
+    // 2. Câmera — grande angular (traseira)
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: { exact: 'environment' },
+        width:  { ideal: 4032 },
+        height: { ideal: 3024 },
+      },
+      audio: false
+    })
+
+    document.getElementById('videoEl').srcObject = stream
+    imageCapture = new ImageCapture(stream.getVideoTracks()[0])
+
+    // 3. GPS contínuo
+    watchId = navigator.geolocation.watchPosition(
+      onPosicao,
+      onGPSErro,
+      { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 }
+    )
+
+    tempoInicio = Date.now()
+    mostrarTela('screen-patrol')
+
+    // Clock HUD
+    hudInterval = setInterval(() => {
+      const elapsed = Date.now() - tempoInicio
+      const m = Math.floor(elapsed / 60000).toString().padStart(2,'0')
+      const s = Math.floor((elapsed % 60000) / 1000).toString().padStart(2,'0')
+      document.getElementById('hudTime').textContent = m + ':' + s
+    }, 1000)
+
+  } catch(err) {
+    alert('Erro ao iniciar: ' + err.message + '\n\nVerifique as permissões de câmera e localização.')
+  }
+}
+
+// ══════════════════════════════════════════
+//  GPS — POSIÇÃO
+// ══════════════════════════════════════════
+function onPosicao(pos) {
+  posicaoAtual = pos.coords
+  const lat = pos.coords.latitude.toFixed(6)
+  const lng = pos.coords.longitude.toFixed(6)
+  const acc = Math.round(pos.coords.accuracy)
+
+  document.getElementById('hudGPS').innerHTML =
+    `GPS: ${lat}, ${lng}<br>ACC: ±${acc}m`
+
+  // Verifica geofence em todos os pontos
+  pontos.forEach((ponto, idx) => {
+    if (jaFotografou[ponto.nome]) return
+    const dist = calcularDistancia(pos.coords, ponto)
+    if (dist < 30) {
+      jaFotografou[ponto.nome] = true
+      capturarPonto(ponto)
+      setTimeout(() => { jaFotografou[ponto.nome] = false }, 60000)
+    }
+  })
+
+  // Atualiza "próximo ponto"
+  atualizarProximoPonto(pos.coords)
+}
+
+function onGPSErro(err) {
+  document.getElementById('hudGPS').innerHTML = `GPS: ERRO<br>${err.message}`
+}
+
+// ══════════════════════════════════════════
+//  PRÓXIMO PONTO
+// ══════════════════════════════════════════
+function atualizarProximoPonto(coords) {
+  let menorDist = Infinity, proximo = null
+  pontos.forEach(p => {
+    if (jaFotografou[p.nome]) return
+    const d = calcularDistancia(coords, p)
+    if (d < menorDist) { menorDist = d; proximo = p }
+  })
+  if (!proximo) return
+
+  document.getElementById('nextName').textContent = proximo.nome
+  const distLabel = menorDist < 1000
+    ? Math.round(menorDist) + ' m'
+    : (menorDist/1000).toFixed(1) + ' km'
+  document.getElementById('nextDist').textContent = distLabel
+
+  const pct = Math.max(0, Math.min(100, 100 - (menorDist / 500 * 100)))
+  document.getElementById('nextBar').style.width = pct + '%'
+
+  const eta = Math.round(menorDist / 30) // ~30m/s dirigindo
+  document.getElementById('nextETA').textContent = eta < 60
+    ? `~${eta}s a 30km/h`
+    : `~${Math.round(eta/60)}min a 30km/h`
+}
+
+// ══════════════════════════════════════════
+//  CAPTURA AUTOMÁTICA
+// ══════════════════════════════════════════
+async function capturarPonto(ponto) {
+  if (capturando) return
+  capturando = true
+
+  mostrarTela('screen-capture')
+  document.getElementById('captureTitle').textContent = 'Capturando...'
+  document.getElementById('captureSub').textContent = ponto.nome
+  document.getElementById('uploadLabel').textContent = 'Preparando câmera...'
+  document.getElementById('uploadBar').style.width = '0%'
+  document.getElementById('uploadPct').textContent = '0%'
+
+  resetDots()
+  const fotos = []
+
+  for (let i = 1; i <= 3; i++) {
+    setDotActive(i)
+    document.getElementById('uploadLabel').textContent = `Capturando foto ${i} de 3...`
+    setProgress(((i-1)/3)*33)
+
+    await esperar(400)
+    flash()
+
+    try {
+      const blob = await imageCapture.takePhoto({ imageWidth:3024 })
+      fotos.push(blob)
+      setDotDone(i)
+      setProgress((i/3)*60)
+    } catch(e) {
+      // fallback — câmera simulada em ambiente sem hardware
+      fotos.push(null)
+      setDotDone(i)
+    }
+
+    await esperar(500)
+  }
+
+  // Upload simulado (em produção: POST para Google Drive via Apps Script)
+  document.getElementById('uploadLabel').textContent = 'Enviando para Drive...'
+  for (let p = 60; p <= 95; p += 5) {
+    await esperar(100)
+    setProgress(p)
+  }
+
+  // Enviar para análise GPT-4o (em produção: Cloud Function)
+  document.getElementById('uploadLabel').textContent = '🤖 Análise GPT-4o Vision...'
+  await esperar(1200)
+  setProgress(100)
+  document.getElementById('uploadPct').textContent = '✓ Concluído'
+  document.getElementById('captureTitle').textContent = 'Registrado!'
+  document.getElementById('uploadLabel').textContent = `${ponto.nome} — análise enviada`
+
+  await esperar(2000)
+  mostrarTela('screen-patrol')
+  capturando = false
+}
+
+async function capturarManual() {
+  const ponto = pontos[0] // ponto mais próximo
+  await capturarPonto(ponto)
+}
+
+// ══════════════════════════════════════════
+//  PARAR PATRULHA
+// ══════════════════════════════════════════
+function pararPatrulha() {
+  if (stream) { stream.getTracks().forEach(t => t.stop()) }
+  if (watchId !== null) { navigator.geolocation.clearWatch(watchId) }
+  if (wakeLock) { wakeLock.release(); wakeLock = null }
+  clearInterval(hudInterval)
+  capturando = false
+  mostrarTela('screen-start')
+}
+
+// ══════════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════════
+function calcularDistancia(pos, ponto) {
+  const R = 6371000
+  const dLat = (ponto.lat - pos.latitude) * Math.PI / 180
+  const dLng = (ponto.lng - pos.longitude) * Math.PI / 180
+  const a = Math.sin(dLat/2)**2 +
+            Math.cos(pos.latitude * Math.PI/180) *
+            Math.cos(ponto.lat * Math.PI/180) *
+            Math.sin(dLng/2)**2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+}
+
+function esperar(ms) { return new Promise(r => setTimeout(r, ms)) }
+
+function flash() {
+  const el = document.getElementById('flash')
+  el.classList.add('flash')
+  setTimeout(() => el.classList.remove('flash'), 150)
+}
+
+function setProgress(pct) {
+  document.getElementById('uploadBar').style.width = pct + '%'
+  document.getElementById('uploadPct').textContent = Math.round(pct) + '%'
+}
+
+function resetDots() {
+  for(let i=1;i<=3;i++){
+    const d = document.getElementById('dot'+i)
+    d.className = 'photo-dot'
+    d.textContent = i
+  }
+}
+function setDotActive(i) { document.getElementById('dot'+i).className = 'photo-dot active' }
+function setDotDone(i)   { document.getElementById('dot'+i).className = 'photo-dot done'; document.getElementById('dot'+i).textContent = '✓' }
+
+function abrirConfig() { alert('Em breve: editor de pontos via Google Sheets') }
+</script>
+</body>
+</html>

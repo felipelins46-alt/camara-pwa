@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#060d06">
+<title>Camará Ambiental — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root {
+  --bg:       #060d06;
+  --surface:  #0c160c;
+  --surface2: #111f11;
+  --border:   #1c301c;
+  --green:    #7fff00;
+  --green-dim:#2d5a00;
+  --green-glow:rgba(127,255,0,0.12);
+  --cyan:     #00e5cc;
+  --amber:    #ffb700;
+  --red:      #ff3d3d;
+  --text:     #d4edcc;
+  --text2:    #5d8a5a;
+  --text3:    #2e4a2e;
+  --nav-h:    60px;
+  --head-h:   56px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+html, body {
+  height:100%; width:100%;
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Syne', sans-serif;
+  overflow:hidden;
+}
+
+/* ─── LAYOUT ─── */
+.app { display:flex; flex-direction:column; height:100vh; width:100%; }
+
+/* ─── HEADER ─── */
+header {
+  height:var(--head-h);
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 16px;
+  background:rgba(6,13,6,0.97);
+  border-bottom:1px solid var(--border);
+  flex-shrink:0; z-index:100;
+}
+
+.logo { display:flex; align-items:center; gap:10px; }
+.logo svg { width:32px; height:32px; }
+.logo-name { font-size:15px; font-weight:800; letter-spacing:-0.3px; }
+.logo-name span { color:var(--green); }
+
+.header-right { display:flex; align-items:center; gap:10px; }
+.live-badge {
+  display:flex; align-items:center; gap:5px;
+  font-family:'Space Mono',monospace; font-size:9px; letter-spacing:.1em;
+  color:var(--green); background:var(--green-glow);
+  border:1px solid var(--green-dim); border-radius:4px; padding:4px 8px;
+}
+.dot { width:5px; height:5px; border-radius:50%; background:var(--green); box-shadow:0 0 5px var(--green); animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+.btn-refresh {
+  background:var(--surface); border:1px solid var(--border);
+  color:var(--text2); border-radius:6px; padding:6px 10px;
+  font-size:13px; cursor:pointer;
+}
+.btn-refresh:active { opacity:.7; }
+
+/* ─── CONTENT AREA ─── */
+.content {
+  flex:1; overflow:hidden;
+  position:relative;
+}
+
+/* ─── TABS (pages) ─── */
+.tab-page {
+  position:absolute; inset:0;
+  overflow-y:auto; overflow-x:hidden;
+  padding-bottom:calc(var(--nav-h) + 8px);
+  display:none;
+  -webkit-overflow-scrolling:touch;
+}
+.tab-page.active { display:block; }
+.tab-page::-webkit-scrollbar { display:none; }
+
+/* ─── BOTTOM NAV ─── */
+nav {
+  height:var(--nav-h);
+  display:flex;
+  background:rgba(6,13,6,0.97);
+  border-top:1px solid var(--border);
+  flex-shrink:0; z-index:100;
+  position:relative;
+}
+
+.nav-btn {
+  flex:1; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; gap:4px; cursor:pointer; border:none;
+  background:transparent; color:var(--text3);
+  font-family:'Space Mono',monospace; font-size:8px; letter-spacing:.06em;
+  text-transform:uppercase; transition:color .15s;
+  -webkit-tap-highlight-color:transparent;
+}
+.nav-btn.active { color:var(--green); }
+.nav-btn .nav-icon { font-size:18px; }
+
+/* ─── CARDS ─── */
+.card {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:10px;
+  margin:12px 12px 0;
+  overflow:hidden;
+}
+.card:last-child { margin-bottom:0; }
+
+.card-header {
+  padding:12px 14px;
+  border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+}
+.card-title {
+  font-size:10px; font-weight:700; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--text);
+}
+.card-badge {
+  font-family:'Space Mono',monospace; font-size:8px;
+  padding:2px 6px; border-radius:3px;
+  background:var(--green-glow); border:1px solid var(--green-dim); color:var(--green);
+  letter-spacing:.06em;
+}
+.card-badge.amber { background:rgba(255,183,0,.1); border-color:#7a5500; color:var(--amber); }
+.card-badge.red   { background:rgba(255,61,61,.1);  border-color:#7a1a1a; color:var(--red); }
+
+/* ─── KPIs ─── */
+.kpi-grid {
+  display:grid; grid-template-columns:1fr 1fr;
+  gap:10px; padding:12px;
+}
+.kpi {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:8px; padding:12px 14px;
+}
+.kpi-label {
+  font-family:'Space Mono',monospace; font-size:8px; letter-spacing:.1em;
+  color:var(--text2); text-transform:uppercase; margin-bottom:6px;
+}
+.kpi-value {
+  font-family:'Space Mono',monospace; font-size:26px; font-weight:700;
+  color:var(--green); line-height:1;
+  text-shadow:0 0 16px rgba(127,255,0,.3);
+}
+.kpi-value.cyan  { color:var(--cyan);  text-shadow:0 0 16px rgba(0,229,204,.3); }
+.kpi-value.amber { color:var(--amber); text-shadow:0 0 16px rgba(255,183,0,.3); }
+.kpi-value.red   { color:var(--red);   text-shadow:0 0 16px rgba(255,61,61,.3); }
+.kpi-sub  { font-size:9px; color:var(--text3); margin-top:4px; }
+.kpi-delta { font-size:9px; color:var(--green); margin-top:2px; }
+.kpi-delta.neg { color:var(--red); }
+
+/* ─── CONFIG BANNER ─── */
+.config-banner {
+  margin:12px 12px 0;
+  background:rgba(255,183,0,.07); border:1px solid rgba(255,183,0,.25);
+  border-radius:8px; padding:10px 14px;
+  display:flex; align-items:center; gap:10px;
+}
+.config-banner-text { flex:1; font-size:10px; color:var(--amber); line-height:1.5; }
+.config-banner-btn {
+  background:var(--amber); color:#000; border:none; border-radius:6px;
+  padding:6px 12px; font-family:'Syne',sans-serif; font-size:11px; font-weight:700;
+  cursor:pointer; white-space:nowrap; flex-shrink:0;
+}
+
+/* ─── FEED ─── */
+.feed-item {
+  padding:12px 14px;
+  border-bottom:1px solid var(--border);
+  display:flex; gap:10px; align-items:flex-start;
+}
+.feed-item:last-child { border-bottom:none; }
+.sev-bar { width:3px; border-radius:2px; align-self:stretch; min-height:44px; flex-shrink:0; }
+.sev-bar.alta  { background:var(--red); }
+.sev-bar.media { background:var(--amber); }
+.sev-bar.baixa { background:var(--green); }
+.feed-body { flex:1; min-width:0; }
+.feed-ponto { font-size:12px; font-weight:700; color:var(--text); }
+.feed-desc  { font-size:10px; color:var(--text2); margin-top:3px; line-height:1.45; }
+.feed-meta  { font-family:'Space Mono',monospace; font-size:8px; color:var(--text3); margin-top:5px; }
+.sev-chip {
+  font-family:'Space Mono',monospace; font-size:8px; font-weight:700;
+  padding:2px 6px; border-radius:3px; flex-shrink:0; letter-spacing:.06em; align-self:flex-start;
+  margin-top:2px;
+}
+.sev-chip.alta  { background:rgba(255,61,61,.15);  color:var(--red); }
+.sev-chip.media { background:rgba(255,183,0,.15);  color:var(--amber); }
+.sev-chip.baixa { background:rgba(127,255,0,.15);  color:var(--green); }
+
+/* ─── MAP PAGE ─── */
+#map {
+  width:100%;
+  height:calc(100vh - var(--head-h) - var(--nav-h) - 44px);
+  min-height:300px;
+  display:block;
+}
+.map-toolbar {
+  display:flex; gap:8px; padding:10px 12px;
+  background:var(--surface); border-bottom:1px solid var(--border);
+  overflow-x:auto; -webkit-overflow-scrolling:touch;
+}
+.map-toolbar::-webkit-scrollbar { display:none; }
+.filter-chip {
+  flex-shrink:0; padding:5px 10px; border-radius:20px;
+  border:1px solid var(--border); background:transparent;
+  font-family:'Space Mono',monospace; font-size:9px; color:var(--text2);
+  cursor:pointer; transition:.15s; letter-spacing:.05em;
+}
+.filter-chip.active-chip { background:var(--green-glow); border-color:var(--green-dim); color:var(--green); }
+
+/* ─── CHARTS ─── */
+.bar-group { padding:14px; display:flex; flex-direction:column; gap:10px; }
+.bar-row { display:flex; align-items:center; gap:8px; }
+.bar-label { font-size:9px; color:var(--text2); width:100px; flex-shrink:0; }
+.bar-track { flex:1; height:18px; background:var(--surface2); border-radius:3px; overflow:hidden; }
+.bar-fill {
+  height:100%; border-radius:3px;
+  display:flex; align-items:center; padding-left:6px;
+  font-family:'Space Mono',monospace; font-size:8px; font-weight:700;
+  transition:width 1s ease;
+}
+.bar-fill.green { background:linear-gradient(90deg,var(--green-dim),var(--green)); color:#000; }
+.bar-fill.cyan  { background:linear-gradient(90deg,#007a70,var(--cyan)); color:#000; }
+.bar-fill.amber { background:linear-gradient(90deg,#7a5500,var(--amber)); color:#000; }
+.bar-fill.red   { background:linear-gradient(90deg,#7a1a1a,var(--red)); color:#fff; }
+
+/* ─── CONFIG PAGE ─── */
+.config-section { padding:12px; display:flex; flex-direction:column; gap:10px; }
+.config-field { display:flex; flex-direction:column; gap:6px; }
+.config-label { font-family:'Space Mono',monospace; font-size:9px; color:var(--text2); letter-spacing:.1em; text-transform:uppercase; }
+.config-input {
+  background:var(--surface2); border:1px solid var(--border); border-radius:6px;
+  padding:10px 12px; color:var(--text); font-family:'Space Mono',monospace; font-size:11px;
+  outline:none; width:100%;
+}
+.config-input:focus { border-color:var(--green-dim); }
+.config-hint { font-size:9px; color:var(--text3); line-height:1.5; }
+.btn-save {
+  width:100%; padding:14px; border-radius:8px; border:none;
+  background:var(--green); color:#000;
+  font-family:'Syne',sans-serif; font-size:15px; font-weight:800;
+  cursor:pointer; margin-top:4px;
+}
+.btn-save:active { opacity:.8; }
+.config-status {
+  font-family:'Space Mono',monospace; font-size:10px; color:var(--text2);
+  text-align:center; padding:8px;
+}
+
+.donut-row { padding:16px 14px; display:flex; align-items:center; gap:16px; }
+.donut {
+  width:80px; height:80px; border-radius:50%; flex-shrink:0;
+  background:conic-gradient(var(--red) 0% 42%, var(--amber) 42% 70%, var(--green) 70% 100%);
+  position:relative;
+}
+.donut::after {
+  content:'42%';
+  position:absolute; inset:16px; background:var(--surface);
+  border-radius:50%; display:grid; place-items:center;
+  font-family:'Space Mono',monospace; font-size:12px; font-weight:700; color:var(--red);
+}
+.donut-legend { flex:1; display:flex; flex-direction:column; gap:7px; }
+.legend-row { display:flex; align-items:center; gap:7px; font-size:10px; color:var(--text2); }
+.legend-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+
+/* leaflet dark */
+.leaflet-tile-pane { filter:brightness(.65) saturate(.5) hue-rotate(30deg); }
+.leaflet-control-attribution { display:none !important; }
+.leaflet-popup-content-wrapper {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:6px; box-shadow:0 4px 20px rgba(0,0,0,.5);
+}
+.leaflet-popup-content { margin:10px 12px; }
+.leaflet-popup-tip-container { display:none; }
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="40" cy="50" rx="11" ry="19" fill="#0a3d0a" transform="rotate(0,40,50)"/>
+      <ellipse cx="40" cy="50" rx="11" ry="19" fill="#1a6b1a" transform="rotate(36,40,50)"/>
+      <ellipse cx="40" cy="50" rx="11" ry="19" fill="#0a3d0a" transform="rotate(72,40,50)"/>
+      <ellipse cx="40" cy="50" rx="11" ry="19" fill="#1a6b1a" transform="rotate(108,40,50)"/>
+      <ellipse cx="40" cy="50" rx="11" ry="19" fill="#2da02d" transform="rotate(144,40,50)"/>
+      <circle cx="40" cy="50" r="6" fill="#7fff00" opacity=".9"/>
+    </svg>
+    <div class="logo-name">Camará <span>Ambiental</span></div>
+  </div>
+  <div class="header-right">
+    <div class="live-badge" id="liveBadge"><div class="dot"></div> <span id="liveLabel">DEMO</span></div>
+    <button class="btn-refresh" onclick="carregarDados()" title="Atualizar">↻</button>
+  </div>
+</header>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- ══ HOME ══ -->
+  <div class="tab-page active" id="page-home">
+
+    <!-- Config banner (some when no sheets configured) -->
+    <div class="config-banner" id="configBanner">
+      <div class="config-banner-text">
+        Conecte seu Google Sheets para ver dados reais da patrulha.
+      </div>
+      <button class="config-banner-btn" onclick="irPara('config')">Conectar</button>
+    </div>
+
+    <!-- KPIs -->
+    <div class="card" style="margin-top:10px;">
+      <div class="card-header">
+        <span class="card-title">Resumo do Dia</span>
+        <span class="card-badge" id="dataHoje">—</span>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="kpi-label">Ocorrências</div>
+          <div class="kpi-value" id="kpiTotal">—</div>
+          <div class="kpi-sub" id="kpiTotalSub">Aguardando dados</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Pontos Cobertos</div>
+          <div class="kpi-value cyan" id="kpiPontos">—</div>
+          <div class="kpi-sub" id="kpiPontosSub">de ? planejados</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Alta Severidade</div>
+          <div class="kpi-value red" id="kpiAlta">—</div>
+          <div class="kpi-sub" id="kpiAltaSub">do total</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Custo API</div>
+          <div class="kpi-value amber" id="kpiCusto">—</div>
+          <div class="kpi-sub" id="kpiCustoSub">chamadas GPT-4o</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Por tipo -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Por Tipo</span>
+        <span class="card-badge">CLASSIFICAÇÃO IA</span>
+      </div>
+      <div class="bar-group" id="chartTipo">
+        <div style="padding:8px;font-family:'Space Mono',monospace;font-size:9px;color:var(--text3);">Sem dados ainda</div>
+      </div>
+    </div>
+
+    <!-- Severidade -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Severidade</span>
+        <span class="card-badge amber">ANÁLISE GPT-4o</span>
+      </div>
+      <div class="donut-row">
+        <div class="donut" id="donutEl"></div>
+        <div class="donut-legend" id="donutLegend">
+          <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--text3);">Sem dados</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ MAPA ══ -->
+  <div class="tab-page" id="page-map">
+    <div class="map-toolbar">
+      <button class="filter-chip active-chip" onclick="filtrarMapa('todos',this)">Todos</button>
+      <button class="filter-chip" onclick="filtrarMapa('alta',this)">🔴 Alta</button>
+      <button class="filter-chip" onclick="filtrarMapa('media',this)">🟡 Média</button>
+      <button class="filter-chip" onclick="filtrarMapa('baixa',this)">🟢 Baixa</button>
+      <button class="filter-chip" onclick="filtrarMapa('residuos',this)">Resíduos</button>
+      <button class="filter-chip" onclick="filtrarMapa('buracos',this)">Buracos</button>
+    </div>
+    <div id="map"></div>
+  </div>
+
+  <!-- ══ OCORRÊNCIAS ══ -->
+  <div class="tab-page" id="page-feed">
+    <div class="card" style="margin-top:12px;">
+      <div class="card-header">
+        <span class="card-title">Ocorrências Recentes</span>
+        <span class="card-badge red" id="feedCount">0</span>
+      </div>
+      <div id="feedList">
+        <div style="padding:20px;font-family:'Space Mono',monospace;font-size:9px;color:var(--text3);text-align:center;">
+          Aguardando dados do Sheets...
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ CONFIG ══ -->
+  <div class="tab-page" id="page-config">
+    <div class="card" style="margin-top:12px;">
+      <div class="card-header">
+        <span class="card-title">Conexão Google Sheets</span>
+        <span class="card-badge">DADOS REAIS</span>
+      </div>
+      <div class="config-section">
+        <div class="config-field">
+          <label class="config-label">URL do Sheets (CSV publicado)</label>
+          <input class="config-input" id="sheetsUrl" type="url"
+            placeholder="https://docs.google.com/spreadsheets/d/...">
+          <div class="config-hint">
+            No Sheets: Arquivo → Compartilhar → Publicar na web → CSV → Copiar link
+          </div>
+        </div>
+        <div class="config-field">
+          <label class="config-label">Intervalo de atualização</label>
+          <select class="config-input" id="refreshInterval">
+            <option value="0">Manual</option>
+            <option value="30">30 segundos</option>
+            <option value="60" selected>1 minuto</option>
+            <option value="300">5 minutos</option>
+          </select>
+        </div>
+        <button class="btn-save" onclick="salvarConfig()">Salvar e Conectar</button>
+        <div class="config-status" id="configStatus"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Estrutura Esperada do Sheets</span>
+      </div>
+      <div style="padding:12px;overflow-x:auto;">
+        <table style="font-family:'Space Mono',monospace;font-size:8px;color:var(--text2);border-collapse:collapse;width:100%;min-width:420px;">
+          <tr style="color:var(--green);border-bottom:1px solid var(--border);">
+            <td style="padding:4px 6px">timestamp</td>
+            <td style="padding:4px 6px">ponto</td>
+            <td style="padding:4px 6px">lat</td>
+            <td style="padding:4px 6px">lng</td>
+            <td style="padding:4px 6px">tipo</td>
+            <td style="padding:4px 6px">severidade</td>
+            <td style="padding:4px 6px">descricao</td>
+          </tr>
+          <tr style="color:var(--text3);">
+            <td style="padding:4px 6px">2025-06-15 08:12</td>
+            <td style="padding:4px 6px">Av. Agamenon</td>
+            <td style="padding:4px 6px">-8.0476</td>
+            <td style="padding:4px 6px">-34.8770</td>
+            <td style="padding:4px 6px">Resíduos</td>
+            <td style="padding:4px 6px">alta</td>
+            <td style="padding:4px 6px">Lixo acumulado...</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:12px;">
+      <div class="card-header"><span class="card-title">Dados Demo</span></div>
+      <div style="padding:12px;">
+        <button class="btn-save" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);" onclick="usarDemo()">
+          Carregar dados de demonstração (Recife)
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /content -->
+
+<!-- BOTTOM NAV -->
+<nav>
+  <button class="nav-btn active" onclick="irPara('home')" id="nav-home">
+    <span class="nav-icon">⬛</span>HOME
+  </button>
+  <button class="nav-btn" onclick="irPara('map')" id="nav-map">
+    <span class="nav-icon">🗺</span>MAPA
+  </button>
+  <button class="nav-btn" onclick="irPara('feed')" id="nav-feed">
+    <span class="nav-icon">📋</span>DADOS
+  </button>
+  <button class="nav-btn" onclick="irPara('config')" id="nav-config">
+    <span class="nav-icon">⚙</span>CONFIG
+  </button>
+</nav>
+
+</div><!-- /app -->
+
+<script>
+// ══════════════════════════════════════════
+//  CONFIG & STATE
+// ══════════════════════════════════════════
+let sheetsUrl = localStorage.getItem('sheetsUrl') || ''
+let autoInterval = null
+let ocorrencias = []
+let mapaIniciado = false
+let mapInstance = null
+let mapaMarkers = []
+let filtroAtivo = 'todos'
+
+const CUSTO_POR_CHAMADA = 0.025
+
+// Demo data — Recife e Região Metropolitana
+const DEMO_DATA = [
+  { timestamp:'2025-06-15 07:14', ponto:'Av. Agamenon Magalhães', lat:-8.0518, lng:-34.8930, tipo:'Resíduos Sólidos',      severidade:'alta',  descricao:'Acúmulo de resíduos domésticos e comerciais no canteiro central. Estimativa 300kg. Coleta ausente há 4 dias. Risco sanitário.' },
+  { timestamp:'2025-06-15 07:32', ponto:'Cais de Santa Rita',     lat:-8.0627, lng:-34.8717, tipo:'Resíduos Sólidos',      severidade:'alta',  descricao:'Descarte irregular de entulho e plásticos na orla. Volume expressivo obstruindo acesso ao cais.' },
+  { timestamp:'2025-06-15 07:51', ponto:'R. da Aurora',           lat:-8.0601, lng:-34.8813, tipo:'Buracos / Pavimentação', severidade:'media', descricao:'Buraco de 25cm no cruzamento com Av. Cruz Cabugá. Risco a motociclistas. Pavimento degradado em trecho de 3m.' },
+  { timestamp:'2025-06-15 08:09', ponto:'Av. Conde da Boa Vista', lat:-8.0671, lng:-34.8833, tipo:'Sinalização',            severidade:'baixa', descricao:'Faixa de pedestres apagada na altura do n° 800. Visibilidade comprometida especialmente à noite.' },
+  { timestamp:'2025-06-15 08:28', ponto:'Pátio do Carmo',         lat:-8.0635, lng:-34.8720, tipo:'Resíduos Sólidos',      severidade:'media', descricao:'Lixo orgânico acumulado próximo à feira. Odor intenso. Necessita coleta e higienização do entorno.' },
+  { timestamp:'2025-06-15 08:47', ponto:'Av. Beberibe — Ibura',   lat:-8.1052, lng:-34.9192, tipo:'Esgoto / Drenagem',     severidade:'alta',  descricao:'Extravasamento de esgoto na calçada. Lâmina d\'água visível. Risco sanitário grave. Acionar COMPESA urgente.' },
+  { timestamp:'2025-06-15 09:03', ponto:'R. Real da Torre',       lat:-8.0791, lng:-34.9153, tipo:'Buracos / Pavimentação', severidade:'alta',  descricao:'Cratera de ~50cm no sentido sul. Via parcialmente interditada. Risco estrutural de afundamento maior.' },
+  { timestamp:'2025-06-15 09:22', ponto:'Av. Norte — Arruda',     lat:-8.0455, lng:-34.9007, tipo:'Resíduos Sólidos',      severidade:'media', descricao:'Ponto viciado de descarte irregular. Mobiliário, eletrodomésticos e lixo doméstico misturado.' },
+  { timestamp:'2025-06-15 09:41', ponto:'Olinda — R. do Amparo',  lat:-7.9988, lng:-34.8443, tipo:'Sinalização',            severidade:'baixa', descricao:'Placa de velocidade tombada na curva. Sinalização do patrimônio histórico danificada.' },
+  { timestamp:'2025-06-15 09:58', ponto:'Caruaru — Sulanca',      lat:-8.2760, lng:-35.9753, tipo:'Resíduos Sólidos',      severidade:'media', descricao:'Acúmulo de retalhos têxteis e embalagens plásticas na via lateral à feira. Risco de entupimento do bueiro.' },
+  { timestamp:'2025-06-15 10:14', ponto:'Boa Viagem — Av. Boa Viagem', lat:-8.1270, lng:-34.9004, tipo:'Buracos / Pavimentação', severidade:'baixa', descricao:'Buraco pequeno no mosaico português da calçada. Risco de queda a pedestres. Reparo urgente para preservar patrimônio.' },
+  { timestamp:'2025-06-15 10:33', ponto:'Jaboatão — R. Agrestina', lat:-8.1121, lng:-35.0234, tipo:'Esgoto / Drenagem',   severidade:'alta',  descricao:'Bueiro entupido causando alagamento. Água escura com odor fétido cobre 40m da via. Tráfego impossibilitado.' },
+]
+
+// ══════════════════════════════════════════
+//  NAVEGAÇÃO
+// ══════════════════════════════════════════
+function irPara(tab) {
+  document.querySelectorAll('.tab-page').forEach(p => p.classList.remove('active'))
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'))
+  document.getElementById('page-'+tab).classList.add('active')
+  document.getElementById('nav-'+tab).classList.add('active')
+
+  if (tab === 'map') {
+    if (!mapaIniciado) iniciarMapa()
+    else setTimeout(() => mapInstance && mapInstance.invalidateSize(), 100)
+  }
+}
+
+// ══════════════════════════════════════════
+//  MAPA
+// ══════════════════════════════════════════
+function iniciarMapa() {
+  if (mapaIniciado) return
+  mapaIniciado = true
+
+  mapInstance = L.map('map', {
+    zoomControl:false,
+    attributionControl:false,
+    preferCanvas:true
+  }).setView([-8.0476, -34.8770], 12)
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    maxZoom:19, subdomains:'abcd'
+  }).addTo(mapInstance)
+
+  L.control.zoom({ position:'bottomright' }).addTo(mapInstance)
+
+  setTimeout(() => {
+    mapInstance.invalidateSize()
+    renderizarMapa()
+  }, 200)
+}
+
+const COR = { alta:'#ff3d3d', media:'#ffb700', baixa:'#7fff00' }
+
+function renderizarMapa() {
+  if (!mapInstance) return
+  mapaMarkers.forEach(m => mapInstance.removeLayer(m))
+  mapaMarkers = []
+
+  const filtrados = ocorrencias.filter(o => {
+    if (filtroAtivo === 'todos') return true
+    if (['alta','media','baixa'].includes(filtroAtivo)) return o.severidade === filtroAtivo
+    if (filtroAtivo === 'residuos') return o.tipo.toLowerCase().includes('resíd')
+    if (filtroAtivo === 'buracos')  return o.tipo.toLowerCase().includes('bura')
+    return true
+  })
+
+  filtrados.forEach(o => {
+    const lat = parseFloat(o.lat), lng = parseFloat(o.lng)
+    if (isNaN(lat)||isNaN(lng)) return
+    const cor = COR[o.severidade] || '#7fff00'
+
+    const m = L.circleMarker([lat,lng], {
+      radius: o.severidade==='alta'?9:o.severidade==='media'?7:5,
+      fillColor:cor, color:cor, weight:2, opacity:.9, fillOpacity:.3
+    }).addTo(mapInstance)
+
+    L.circle([lat,lng],{
+      radius:30, fillColor:cor, color:cor,
+      weight:1, opacity:.25, fillOpacity:.05, dashArray:'3 4'
+    }).addTo(mapInstance)
+
+    m.bindPopup(`<div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--text);line-height:1.6">
+      <b style="color:${cor}">${o.ponto}</b><br>
+      ${o.tipo}<br>
+      <span style="color:${cor};font-size:8px;text-transform:uppercase">● ${o.severidade}</span><br>
+      <span style="color:var(--text3);font-size:8px">${o.timestamp||''}</span>
+    </div>`)
+
+    mapaMarkers.push(m)
+  })
+}
+
+function filtrarMapa(tipo, el) {
+  filtroAtivo = tipo
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active-chip'))
+  if (el) el.classList.add('active-chip')
+  renderizarMapa()
+}
+
+// ══════════════════════════════════════════
+//  DADOS
+// ══════════════════════════════════════════
+async function carregarDados() {
+  const url = localStorage.getItem('sheetsUrl')
+  if (!url) { usarDemo(); return }
+
+  document.getElementById('liveLabel').textContent = '...'
+  try {
+    const resp = await fetch(url + '&cachebust=' + Date.now())
+    const text = await resp.text()
+    const linhas = text.trim().split('\n').slice(1) // pula header
+    ocorrencias = linhas.map(l => {
+      const c = l.split(',').map(s => s.trim().replace(/^"|"$/g,''))
+      return {
+        timestamp:c[0], ponto:c[1], lat:c[2], lng:c[3],
+        tipo:c[4], severidade:(c[5]||'').toLowerCase(), descricao:c[6]
+      }
+    }).filter(o => o.ponto)
+
+    document.getElementById('liveLabel').textContent = 'AO VIVO'
+    document.getElementById('configBanner').style.display = 'none'
+    renderizarTudo()
+  } catch(e) {
+    document.getElementById('liveLabel').textContent = 'ERRO'
+    document.getElementById('configStatus').textContent = 'Erro ao carregar: ' + e.message
+  }
+}
+
+function usarDemo() {
+  ocorrencias = DEMO_DATA
+  document.getElementById('liveLabel').textContent = 'DEMO'
+  document.getElementById('configBanner').style.display = 'none'
+  renderizarTudo()
+  irPara('home')
+}
+
+function renderizarTudo() {
+  renderizarKPIs()
+  renderizarCharts()
+  renderizarFeed()
+  if (mapaIniciado) renderizarMapa()
+}
+
+function renderizarKPIs() {
+  const hoje = new Date().toLocaleDateString('pt-BR')
+  document.getElementById('dataHoje').textContent = hoje
+
+  const total = ocorrencias.length
+  const alta  = ocorrencias.filter(o => o.severidade==='alta').length
+  const pontos = [...new Set(ocorrencias.map(o=>o.ponto))].length
+  const custo  = (total * CUSTO_POR_CHAMADA).toFixed(2)
+
+  document.getElementById('kpiTotal').textContent    = total
+  document.getElementById('kpiTotalSub').textContent = pontos + ' pontos distintos'
+  document.getElementById('kpiPontos').textContent   = pontos
+  document.getElementById('kpiPontosSub').textContent= 'pontos registrados'
+  document.getElementById('kpiAlta').textContent     = alta
+  document.getElementById('kpiAltaSub').textContent  = total ? Math.round(alta/total*100)+'% do total' : '—'
+  document.getElementById('kpiCusto').textContent    = '$'+custo
+  document.getElementById('kpiCustoSub').textContent = total + ' chamadas GPT-4o'
+}
+
+function renderizarCharts() {
+  // Por tipo
+  const tipos = {}
+  ocorrencias.forEach(o => { tipos[o.tipo] = (tipos[o.tipo]||0)+1 })
+  const total = ocorrencias.length || 1
+  const cores = ['green','amber','cyan','red']
+  const chartEl = document.getElementById('chartTipo')
+  chartEl.innerHTML = ''
+  Object.entries(tipos).sort((a,b)=>b[1]-a[1]).forEach(([tipo,n],i) => {
+    const pct = Math.round(n/total*100)
+    chartEl.innerHTML += `
+      <div class="bar-row">
+        <div class="bar-label">${tipo}</div>
+        <div class="bar-track">
+          <div class="bar-fill ${cores[i%cores.length]}" style="width:${pct}%">${pct}%</div>
+        </div>
+      </div>`
+  })
+
+  // Severidade donut
+  const alta  = ocorrencias.filter(o=>o.severidade==='alta').length
+  const media = ocorrencias.filter(o=>o.severidade==='media').length
+  const baixa = ocorrencias.filter(o=>o.severidade==='baixa').length
+  const t = alta+media+baixa||1
+  const pA=Math.round(alta/t*100), pM=Math.round(media/t*100), pB=Math.round(baixa/t*100)
+  document.getElementById('donutEl').style.background =
+    `conic-gradient(var(--red) 0% ${pA}%, var(--amber) ${pA}% ${pA+pM}%, var(--green) ${pA+pM}% 100%)`
+  document.getElementById('donutEl').style.setProperty('--pct', pA+'%')
+  // hack: update donut center text via pseudo
+  const style = document.createElement('style')
+  style.textContent = `#donutEl::after { content:'${pA}%'; color:var(--red); }`
+  document.head.appendChild(style)
+
+  document.getElementById('donutLegend').innerHTML = `
+    <div class="legend-row"><div class="legend-dot" style="background:var(--red)"></div>Alta — ${pA}% (${alta})</div>
+    <div class="legend-row"><div class="legend-dot" style="background:var(--amber)"></div>Média — ${pM}% (${media})</div>
+    <div class="legend-row"><div class="legend-dot" style="background:var(--green)"></div>Baixa — ${pB}% (${baixa})</div>
+    <div style="margin-top:6px;font-family:'Space Mono',monospace;font-size:8px;color:var(--text3)">TOTAL: ${t}</div>
+  `
+}
+
+function renderizarFeed() {
+  const feed = document.getElementById('feedList')
+  document.getElementById('feedCount').textContent = ocorrencias.length
+
+  if (!ocorrencias.length) {
+    feed.innerHTML = '<div style="padding:20px;font-family:\'Space Mono\',monospace;font-size:9px;color:var(--text3);text-align:center;">Sem ocorrências</div>'
+    return
+  }
+
+  feed.innerHTML = [...ocorrencias].reverse().map(o => `
+    <div class="feed-item">
+      <div class="sev-bar ${o.severidade}"></div>
+      <div class="feed-body">
+        <div class="feed-ponto">${o.ponto}</div>
+        <div class="feed-desc">${o.descricao}</div>
+        <div class="feed-meta">📍 ${o.tipo} · ${o.timestamp||''} · ${o.lat},${o.lng}</div>
+      </div>
+      <div class="sev-chip ${o.severidade}">${(o.severidade||'').toUpperCase()}</div>
+    </div>
+  `).join('')
+}
+
+// ══════════════════════════════════════════
+//  CONFIG
+// ══════════════════════════════════════════
+function salvarConfig() {
+  const url = document.getElementById('sheetsUrl').value.trim()
+  const intervalo = parseInt(document.getElementById('refreshInterval').value)
+
+  if (!url) { document.getElementById('configStatus').textContent = 'Cole a URL do Sheets.'; return }
+  localStorage.setItem('sheetsUrl', url)
+
+  if (autoInterval) clearInterval(autoInterval)
+  if (intervalo > 0) autoInterval = setInterval(carregarDados, intervalo * 1000)
+
+  document.getElementById('configStatus').textContent = '✓ Conectado. Carregando...'
+  carregarDados()
+}
+
+// ══════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════
+window.addEventListener('load', () => {
+  // Restaura URL salva
+  const savedUrl = localStorage.getItem('sheetsUrl')
+  if (savedUrl) {
+    document.getElementById('sheetsUrl').value = savedUrl
+    document.getElementById('configBanner').style.display = 'none'
+    carregarDados()
+  } else {
+    // mostra demo automaticamente
+    usarDemo()
+  }
+
+  // Auto-refresh
+  const intervalo = parseInt(localStorage.getItem('refreshInterval')||'60')
+  if (intervalo > 0 && savedUrl) {
+    autoInterval = setInterval(carregarDados, intervalo * 1000)
+  }
+})
+</script>
+</body>
+</html>
