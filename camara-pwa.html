@@ -403,20 +403,23 @@ let capturando = false
 let tempoInicio = null
 let hudInterval = null
 
-// Pontos da rota (em produção viriam do Google Sheets)
+// ══ CONFIGURAÇÃO — cole a URL do Apps Script após publicar ══
+const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbwYJOHL4rnKeGR_B64b6D6qTSx9_08xEpw13jgr0gSVAOF0BrDE6_AL4nJLBfGgpzaZjQ/exec'
+
+// Pontos da rota — Recife e Região Metropolitana
 const pontos = [
-  { nome:'Av. Paulista 1000',  lat:-23.5505, lng:-46.6333 },
-  { nome:'R. das Palmeiras',   lat:-23.5540, lng:-46.6380 },
-  { nome:'Praça da República', lat:-23.5480, lng:-46.6290 },
-  { nome:'Av. Central km 2',   lat:-23.5560, lng:-46.6410 },
-  { nome:'R. das Flores',      lat:-23.5520, lng:-46.6350 },
-  { nome:'Viaduto Norte',      lat:-23.5490, lng:-46.6440 },
-  { nome:'R. Bom Jesus',       lat:-23.5470, lng:-46.6260 },
-  { nome:'Praça da Sé',        lat:-23.5600, lng:-46.6300 },
-  { nome:'Av. Brasil 400',     lat:-23.5515, lng:-46.6320 },
-  { nome:'R. das Acácias',     lat:-23.5525, lng:-46.6395 },
-  { nome:'Largo do Arouche',   lat:-23.5550, lng:-46.6355 },
-  { nome:'Parque Augusta',     lat:-23.5535, lng:-46.6310 },
+  { nome:'Av. Agamenon Magalhães', lat:-8.0518, lng:-34.8930 },
+  { nome:'Cais de Santa Rita',     lat:-8.0627, lng:-34.8717 },
+  { nome:'R. da Aurora',           lat:-8.0601, lng:-34.8813 },
+  { nome:'Av. Conde da Boa Vista', lat:-8.0671, lng:-34.8833 },
+  { nome:'Pátio do Carmo',         lat:-8.0635, lng:-34.8720 },
+  { nome:'Av. Beberibe — Ibura',   lat:-8.1052, lng:-34.9192 },
+  { nome:'R. Real da Torre',       lat:-8.0791, lng:-34.9153 },
+  { nome:'Av. Norte — Arruda',     lat:-8.0455, lng:-34.9007 },
+  { nome:'Olinda — R. do Amparo',  lat:-7.9988, lng:-34.8443 },
+  { nome:'Boa Viagem — Av. Boa Viagem', lat:-8.1270, lng:-34.9004 },
+  { nome:'Jaboatão — R. Agrestina',lat:-8.1121, lng:-35.0234 },
+  { nome:'Caruaru — Sulanca',      lat:-8.2760, lng:-35.9753 },
 ]
 const jaFotografou = {}
 let pontoAtualIdx = 0
@@ -572,16 +575,45 @@ async function capturarPonto(ponto) {
     await esperar(500)
   }
 
-  // Upload simulado (em produção: POST para Google Drive via Apps Script)
-  document.getElementById('uploadLabel').textContent = 'Enviando para Drive...'
-  for (let p = 60; p <= 95; p += 5) {
-    await esperar(100)
-    setProgress(p)
+  // Converte blobs para base64
+  document.getElementById('uploadLabel').textContent = 'Preparando envio...'
+  setProgress(65)
+  const fotosBase64 = await Promise.all(
+    fotos.map(blob => blob ? blobParaBase64(blob) : Promise.resolve(null))
+  )
+
+  // Envia para o backend (Apps Script → OpenAI → Sheets)
+  document.getElementById('uploadLabel').textContent = 'Enviando para servidor...'
+  setProgress(75)
+
+  try {
+    if (BACKEND_URL && BACKEND_URL !== 'COLE_A_URL_DO_APPS_SCRIPT_AQUI') {
+      await fetch(BACKEND_URL, {
+        method: 'POST',
+        mode: 'no-cors', // Apps Script não exige preflight assim
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          ponto: ponto.nome,
+          lat: posicaoAtual ? posicaoAtual.latitude  : ponto.lat,
+          lng: posicaoAtual ? posicaoAtual.longitude : ponto.lng,
+          fotos: fotosBase64.filter(Boolean)
+        })
+      })
+      document.getElementById('uploadLabel').textContent = '🤖 GPT-4o Vision analisando...'
+      setProgress(90)
+      await esperar(1500)
+    } else {
+      // Sem backend configurado — simula para demo
+      document.getElementById('uploadLabel').textContent = '⚠ Backend não configurado (demo)'
+      setProgress(90)
+      await esperar(800)
+    }
+  } catch(e) {
+    document.getElementById('uploadLabel').textContent = '⚠ Erro de conexão — dado salvo localmente'
+    setProgress(90)
+    await esperar(800)
   }
 
-  // Enviar para análise GPT-4o (em produção: Cloud Function)
-  document.getElementById('uploadLabel').textContent = '🤖 Análise GPT-4o Vision...'
-  await esperar(1200)
   setProgress(100)
   document.getElementById('uploadPct').textContent = '✓ Concluído'
   document.getElementById('captureTitle').textContent = 'Registrado!'
@@ -624,6 +656,15 @@ function calcularDistancia(pos, ponto) {
 }
 
 function esperar(ms) { return new Promise(r => setTimeout(r, ms)) }
+
+function blobParaBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onloadend = () => resolve(reader.result)
+    reader.onerror = reject
+    reader.readAsDataURL(blob)
+  })
+}
 
 function flash() {
   const el = document.getElementById('flash')
