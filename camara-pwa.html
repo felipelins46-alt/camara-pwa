@@ -110,6 +110,9 @@
   .hud {
     position:absolute; inset:0; pointer-events:none;
   }
+  .hud .action-row, .hud .action-row button {
+    pointer-events:auto;
+  }
 
   /* Corners */
   .corner {
@@ -204,10 +207,12 @@
     font-family:'Syne',sans-serif; font-size:14px; font-weight:700; cursor:pointer;
   }
   .btn-manual {
-    flex:1; padding:14px; border-radius:10px; border:1px solid var(--border);
-    background:rgba(255,255,255,0.05); color:var(--text2);
+    flex:1; padding:14px; border-radius:10px; border:1px solid var(--green);
+    background:rgba(127,255,0,0.12); color:var(--green);
     font-family:'Syne',sans-serif; font-size:14px; font-weight:700; cursor:pointer;
+    box-shadow: 0 0 12px rgba(127,255,0,0.15);
   }
+  .btn-manual:active { opacity:.7; transform:scale(0.97); }
 
   /* ──  CAPTURE FLASH ── */
   .capture-flash {
@@ -625,8 +630,15 @@ async function capturarPonto(ponto) {
 }
 
 async function capturarManual() {
-  const ponto = pontos[0] // ponto mais próximo
-  await capturarPonto(ponto)
+  // Usa posição GPS atual ou o ponto mais próximo como referência
+  const pontoManual = posicaoAtual
+    ? {
+        nome: 'Captura Manual',
+        lat: posicaoAtual.latitude,
+        lng: posicaoAtual.longitude
+      }
+    : pontos[0]
+  await capturarPonto(pontoManual)
 }
 
 // ══════════════════════════════════════════
