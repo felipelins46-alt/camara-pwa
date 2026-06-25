@@ -373,7 +373,6 @@
 //  ESTADO GLOBAL
 // ══════════════════════════════════════════
 let stream = null
-let imageCapture = null
 let wakeLock = null
 let watchId = null
 let posicaoAtual = null
@@ -437,7 +436,6 @@ async function iniciarPatrulha() {
     })
 
     document.getElementById('videoEl').srcObject = stream
-    imageCapture = new ImageCapture(stream.getVideoTracks()[0])
 
     // 3. GPS contínuo
     watchId = navigator.geolocation.watchPosition(
@@ -547,28 +545,16 @@ async function capturarPonto(ponto) {
     await esperar(400)
     flash()
 
-    try {
-      const blob = await imageCapture.takePhoto({ imageWidth:3024 })
-      fotos.push(blob)
-      setDotDone(i)
-      setProgress((i/3)*60)
-    } catch(e) {
-      // fallback — câmera simulada em ambiente sem hardware
-      fotos.push(null)
-      setDotDone(i)
-    }
+    const foto = capturarFrameComoBase64()
+    fotos.push(foto)
+    setDotDone(i)
+    setProgress((i/3)*60)
 
     await esperar(500)
   }
 
-  // Converte blobs para base64
-  document.getElementById('uploadLabel').textContent = 'Preparando envio...'
-  setProgress(65)
-  const fotosBase64 = await Promise.all(
-    fotos.map(blob => blob ? blobParaBase64(blob) : Promise.resolve(null))
-  )
-
   // Envia para o backend (Apps Script → OpenAI → Sheets)
+  const fotosBase64 = fotos
   document.getElementById('uploadLabel').textContent = 'Enviando para servidor...'
   setProgress(75)
 
@@ -650,13 +636,20 @@ function calcularDistancia(pos, ponto) {
 
 function esperar(ms) { return new Promise(r => setTimeout(r, ms)) }
 
-function blobParaBase64(blob) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onloadend = () => resolve(reader.result)
-    reader.onerror = reject
-    reader.readAsDataURL(blob)
-  })
+// Captura o frame atual direto do <video> via canvas — muito mais confiável
+// que ImageCapture.takePhoto(), que falha em vários Android/Chrome mesmo parado.
+function capturarFrameComoBase64() {
+  try {
+    const video = document.getElementById('videoEl')
+    const canvas = document.createElement('canvas')
+    canvas.width = video.videoWidth || 1920
+    canvas.height = video.videoHeight || 1080
+    const ctx = canvas.getContext('2d')
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+    return canvas.toDataURL('image/jpeg', 0.9)
+  } catch (e) {
+    return null
+  }
 }
 
 function flash() {
