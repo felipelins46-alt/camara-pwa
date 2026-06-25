@@ -5,23 +5,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#060d06">
-<title>Camará — Patrulha</title>
+<meta name="theme-color" content="#0a0a0a">
+<title>Vistor — Patrulha</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg:       #060d06;
-    --surface:  #0c160c;
-    --border:   #1c301c;
-    --green:    #7fff00;
-    --green-dim:#2d5a00;
-    --cyan:     #00e5cc;
-    --amber:    #ffb700;
-    --red:      #ff3d3d;
-    --text:     #d4edcc;
-    --text2:    #5d8a5a;
-    --text3:    #2e4a2e;
+    --bg:        #0a0a0a;
+    --surface:   #141414;
+    --surface2:  #1c1c1c;
+    --border:    #262626;
+    --green:     #4ade80;
+    --green-dim: #1c4d2c;
+    --amber:     #d9a23b;
+    --red:       #e25555;
+    --text:      #f2f2f2;
+    --text2:     #8a8a8a;
+    --text3:     #4a4a4a;
   }
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 
@@ -29,8 +30,9 @@
     height:100%; width:100%;
     background:var(--bg);
     color:var(--text);
-    font-family:'Syne', sans-serif;
+    font-family:'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
     overflow:hidden;
+    font-variant-numeric: tabular-nums;
   }
 
   /* ─── SCREENS ─── */
@@ -42,54 +44,55 @@
   ══════════════════════════════ */
   #screen-start {
     background:var(--bg);
-    align-items:center; justify-content:center; gap:0;
-    padding:40px 32px;
+    align-items:center; justify-content:center;
+    padding:40px 28px;
+  }
+
+  .start-wrap {
+    width:100%; max-width:380px;
+    display:flex; flex-direction:column; align-items:center;
   }
 
   .start-logo {
-    margin-bottom:32px;
-    display:flex; flex-direction:column; align-items:center; gap:12px;
+    margin-bottom:40px;
+    display:flex; flex-direction:column; align-items:center; gap:14px;
   }
-  .start-logo svg { width:80px; height:80px; }
+  .start-logo svg { width:56px; height:56px; }
   .start-logo-name {
-    font-size:22px; font-weight:800; letter-spacing:-0.5px; text-align:center;
+    font-size:26px; font-weight:800; letter-spacing:-0.5px; text-align:center;
+    color:var(--text);
   }
-  .start-logo-name span { color:var(--green); }
   .start-logo-sub {
-    font-family:'Space Mono', monospace; font-size:10px; letter-spacing:.15em;
-    color:var(--text2); text-transform:uppercase;
+    font-size:11px; letter-spacing:.16em; font-weight:500;
+    color:var(--text3); text-transform:uppercase; margin-top:-6px;
   }
 
-  .start-stats {
-    width:100%; background:var(--surface); border:1px solid var(--border);
-    border-radius:12px; padding:20px; margin-bottom:28px;
-    display:grid; grid-template-columns:1fr 1fr; gap:16px;
+  .status-line {
+    font-size:12px; color:var(--text3); text-align:center;
+    margin-bottom:32px; line-height:1.6; font-weight:500;
+    min-height:16px;
   }
-  .stat-item { text-align:center; }
-  .stat-val { font-family:'Space Mono',monospace; font-size:24px; font-weight:700; color:var(--green); }
-  .stat-lbl { font-size:10px; color:var(--text2); margin-top:3px; letter-spacing:.05em; }
 
   .btn-start {
-    width:100%; padding:18px; border-radius:12px; border:none; cursor:pointer;
-    background:var(--green); color:#000;
-    font-family:'Syne',sans-serif; font-size:17px; font-weight:800;
-    letter-spacing:.02em;
-    box-shadow: 0 0 40px rgba(127,255,0,0.3);
-    transition: transform .15s, box-shadow .15s;
-    margin-bottom:16px;
+    width:100%; padding:18px; border-radius:14px; border:none; cursor:pointer;
+    background:var(--green); color:#0a0a0a;
+    font-family:inherit; font-size:16px; font-weight:700;
+    letter-spacing:.01em;
+    transition: transform .15s, opacity .15s;
+    margin-bottom:14px;
   }
-  .btn-start:active { transform:scale(0.97); box-shadow:0 0 20px rgba(127,255,0,0.2); }
+  .btn-start:active { transform:scale(0.97); opacity:.9; }
 
   .btn-secondary {
-    width:100%; padding:14px; border-radius:12px;
+    width:100%; padding:14px; border-radius:14px;
     border:1px solid var(--border); cursor:pointer;
     background:transparent; color:var(--text2);
-    font-family:'Syne',sans-serif; font-size:14px;
+    font-family:inherit; font-size:13px; font-weight:600;
   }
 
   .perm-warning {
-    margin-top:20px; font-size:10px; color:var(--text3);
-    text-align:center; font-family:'Space Mono',monospace; line-height:1.6;
+    margin-top:28px; font-size:10px; color:var(--text3);
+    text-align:center; line-height:1.7; font-weight:500;
   }
 
   /* ══════════════════════════════
@@ -97,16 +100,14 @@
   ══════════════════════════════ */
   #screen-patrol { background:#000; }
 
-  /* Camera view */
   .camera-view {
     position:relative; flex:1; overflow:hidden; background:#000;
   }
   #videoEl {
     width:100%; height:100%; object-fit:cover;
-    filter:brightness(0.85);
+    filter:brightness(0.82) saturate(0.9);
   }
 
-  /* HUD overlay */
   .hud {
     position:absolute; inset:0; pointer-events:none;
   }
@@ -114,107 +115,97 @@
     pointer-events:auto;
   }
 
-  /* Corners */
+  /* Corners — minimal, neutral grey */
   .corner {
-    position:absolute; width:22px; height:22px;
-    border-color:var(--green); border-style:solid; opacity:0.7;
+    position:absolute; width:18px; height:18px;
+    border-color:rgba(255,255,255,0.35); border-style:solid;
   }
-  .corner.tl { top:16px; left:16px; border-width:2px 0 0 2px; }
-  .corner.tr { top:16px; right:16px; border-width:2px 2px 0 0; }
-  .corner.bl { bottom:16px; left:16px; border-width:0 0 2px 2px; }
-  .corner.br { bottom:16px; right:16px; border-width:0 2px 2px 0; }
+  .corner.tl { top:18px; left:18px; border-width:1.5px 0 0 1.5px; }
+  .corner.tr { top:18px; right:18px; border-width:1.5px 1.5px 0 0; }
+  .corner.bl { bottom:18px; left:18px; border-width:0 0 1.5px 1.5px; }
+  .corner.br { bottom:18px; right:18px; border-width:0 1.5px 1.5px 0; }
 
-  /* Crosshair */
   .crosshair {
     position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
-    width:30px; height:30px;
+    width:22px; height:22px;
   }
   .crosshair::before, .crosshair::after {
-    content:''; position:absolute; background:rgba(127,255,0,0.5);
+    content:''; position:absolute; background:rgba(255,255,255,0.25);
   }
   .crosshair::before { top:50%; left:0; width:100%; height:1px; }
   .crosshair::after  { left:50%; top:0; height:100%; width:1px; }
 
-  /* Top HUD bar */
   .hud-top {
     position:absolute; top:0; left:0; right:0;
-    padding:12px 16px;
-    background:linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 100%);
+    padding:14px 18px;
+    background:linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 100%);
     display:flex; align-items:center; justify-content:space-between;
   }
   .hud-rec {
     display:flex; align-items:center; gap:6px;
-    font-family:'Space Mono',monospace; font-size:11px; color:var(--red);
-    letter-spacing:.1em;
+    font-size:11px; font-weight:600; color:var(--red);
+    letter-spacing:.08em;
   }
   .hud-rec-dot {
-    width:8px; height:8px; border-radius:50%; background:var(--red);
-    box-shadow:0 0 6px var(--red);
+    width:7px; height:7px; border-radius:50%; background:var(--red);
     animation:pulse 1s infinite;
   }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
 
   .hud-time {
-    font-family:'Space Mono',monospace; font-size:11px; color:rgba(255,255,255,0.7);
+    font-size:11px; font-weight:500; color:rgba(255,255,255,0.55);
   }
 
-  /* GPS badge */
   .hud-gps {
-    position:absolute; top:52px; right:16px;
-    background:rgba(0,0,0,0.7); border:1px solid var(--border);
-    border-radius:6px; padding:6px 10px;
-    font-family:'Space Mono',monospace; font-size:9px;
-    color:var(--cyan); letter-spacing:.06em; line-height:1.6;
+    position:absolute; top:54px; right:18px;
+    background:rgba(0,0,0,0.55); border:1px solid rgba(255,255,255,0.1);
+    border-radius:8px; padding:7px 10px;
+    font-size:9.5px; font-weight:500;
+    color:rgba(255,255,255,0.65); letter-spacing:.02em; line-height:1.7;
   }
 
-  /* Bottom HUD */
   .hud-bottom {
     position:absolute; bottom:0; left:0; right:0;
-    padding:16px;
-    background:linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
+    padding:18px;
+    background:linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%);
   }
 
-  /* Próximo ponto card */
   .next-point-card {
-    background:rgba(6,13,6,0.85); border:1px solid var(--border);
-    border-radius:10px; padding:12px 14px; margin-bottom:12px;
-    backdrop-filter:blur(8px);
+    background:rgba(20,20,20,0.85); border:1px solid rgba(255,255,255,0.08);
+    border-radius:14px; padding:14px 16px; margin-bottom:14px;
+    backdrop-filter:blur(10px);
   }
   .np-label {
-    font-family:'Space Mono',monospace; font-size:8px; color:var(--text2);
-    letter-spacing:.12em; text-transform:uppercase; margin-bottom:6px;
+    font-size:9px; color:var(--text2); font-weight:600;
+    letter-spacing:.12em; text-transform:uppercase; margin-bottom:7px;
   }
-  .np-name { font-size:15px; font-weight:700; color:var(--text); margin-bottom:4px; }
-  .np-info { display:flex; align-items:center; gap:12px; }
+  .np-name { font-size:15px; font-weight:600; color:var(--text); margin-bottom:6px; }
+  .np-info { display:flex; align-items:center; gap:14px; }
   .np-dist {
-    font-family:'Space Mono',monospace; font-size:20px; font-weight:700;
-    color:var(--green); text-shadow:0 0 12px rgba(127,255,0,0.4);
+    font-size:21px; font-weight:700;
+    color:var(--green);
   }
   .np-bar-wrap { flex:1; }
-  .np-bar-track { height:4px; background:var(--border); border-radius:2px; }
+  .np-bar-track { height:3px; background:rgba(255,255,255,0.1); border-radius:2px; }
   .np-bar-fill  {
-    height:4px; background:var(--green); border-radius:2px; width:30%;
-    box-shadow:0 0 8px var(--green);
+    height:3px; background:var(--green); border-radius:2px; width:30%;
     transition:width .5s ease;
   }
-  .np-eta { font-size:10px; color:var(--text2); margin-top:3px; }
+  .np-eta { font-size:10px; color:var(--text2); margin-top:4px; font-weight:500; }
 
-  /* Action row */
   .action-row { display:flex; gap:10px; align-items:center; }
   .btn-stop {
-    flex:1; padding:14px; border-radius:10px; border:1px solid var(--red);
-    background:rgba(255,61,61,0.1); color:var(--red);
-    font-family:'Syne',sans-serif; font-size:14px; font-weight:700; cursor:pointer;
+    flex:1; padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.15);
+    background:rgba(255,255,255,0.04); color:var(--text2);
+    font-family:inherit; font-size:13px; font-weight:600; cursor:pointer;
   }
   .btn-manual {
-    flex:1; padding:14px; border-radius:10px; border:1px solid var(--green);
-    background:rgba(127,255,0,0.12); color:var(--green);
-    font-family:'Syne',sans-serif; font-size:14px; font-weight:700; cursor:pointer;
-    box-shadow: 0 0 12px rgba(127,255,0,0.15);
+    flex:1; padding:15px; border-radius:12px; border:none;
+    background:var(--green); color:#0a0a0a;
+    font-family:inherit; font-size:13px; font-weight:700; cursor:pointer;
   }
-  .btn-manual:active { opacity:.7; transform:scale(0.97); }
+  .btn-manual:active, .btn-stop:active { opacity:.7; transform:scale(0.97); }
 
-  /* ──  CAPTURE FLASH ── */
   .capture-flash {
     position:fixed; inset:0; background:white;
     opacity:0; pointer-events:none; z-index:500;
@@ -226,45 +217,45 @@
      TELA 3 — CAPTURA
   ══════════════════════════════ */
   #screen-capture { background:var(--bg); align-items:center; justify-content:center; padding:32px; }
+  .capture-wrap { width:100%; max-width:340px; display:flex; flex-direction:column; align-items:center; }
 
   .capture-anim {
-    width:120px; height:120px; border-radius:50%;
-    border:3px solid var(--green); position:relative; margin-bottom:28px;
+    width:110px; height:110px; border-radius:50%;
+    border:2px solid var(--green); position:relative; margin-bottom:30px;
     animation:captureRing 1.5s ease infinite;
-    box-shadow: 0 0 30px rgba(127,255,0,0.3);
   }
   @keyframes captureRing {
-    0%   { transform:scale(1);   box-shadow:0 0 20px rgba(127,255,0,.3); }
-    50%  { transform:scale(1.05); box-shadow:0 0 50px rgba(127,255,0,.6); }
-    100% { transform:scale(1);   box-shadow:0 0 20px rgba(127,255,0,.3); }
+    0%   { transform:scale(1);   opacity:.7; }
+    50%  { transform:scale(1.05); opacity:1; }
+    100% { transform:scale(1);   opacity:.7; }
   }
-  .capture-icon { font-size:48px; position:absolute; inset:0; display:grid; place-items:center; }
+  .capture-icon { font-size:38px; position:absolute; inset:0; display:grid; place-items:center; filter:grayscale(1) brightness(1.6); }
 
-  .capture-title { font-size:22px; font-weight:800; color:var(--green); margin-bottom:8px; }
-  .capture-sub { font-size:13px; color:var(--text2); margin-bottom:28px; text-align:center; }
+  .capture-title { font-size:20px; font-weight:700; color:var(--text); margin-bottom:8px; }
+  .capture-sub { font-size:13px; color:var(--text2); margin-bottom:30px; text-align:center; font-weight:500; }
 
-  .photo-counter { display:flex; gap:8px; margin-bottom:28px; }
+  .photo-counter { display:flex; gap:8px; margin-bottom:30px; }
   .photo-dot {
-    width:40px; height:40px; border-radius:8px;
+    width:38px; height:38px; border-radius:10px;
     border:1px solid var(--border); background:var(--surface);
     display:grid; place-items:center;
-    font-family:'Space Mono',monospace; font-size:16px; color:var(--text3);
+    font-size:14px; font-weight:600; color:var(--text3);
     transition:.3s;
   }
-  .photo-dot.done { border-color:var(--green); background:rgba(127,255,0,.1); color:var(--green); }
-  .photo-dot.active { border-color:var(--green); box-shadow:0 0 12px rgba(127,255,0,.3); animation:blink .5s infinite; }
+  .photo-dot.done { border-color:var(--green); background:rgba(74,222,128,.08); color:var(--green); }
+  .photo-dot.active { border-color:var(--green); animation:blink .5s infinite; }
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
 
   .upload-status {
     width:100%; background:var(--surface); border:1px solid var(--border);
-    border-radius:10px; padding:16px; text-align:center;
+    border-radius:14px; padding:18px; text-align:center;
   }
-  .upload-bar-track { height:3px; background:var(--border); border-radius:2px; margin:12px 0; }
+  .upload-bar-track { height:3px; background:var(--border); border-radius:2px; margin:14px 0; }
   .upload-bar-fill  {
     height:3px; background:var(--green); border-radius:2px; width:0%;
-    box-shadow:0 0 8px var(--green); transition:width .4s ease;
+    transition:width .4s ease;
   }
-  .upload-label { font-family:'Space Mono',monospace; font-size:10px; color:var(--text2); }
+  .upload-label { font-size:11px; color:var(--text2); font-weight:500; }
 
 </style>
 </head>
@@ -275,50 +266,34 @@
 
 <!-- ══ TELA 1: INÍCIO ══ -->
 <div class="screen" id="screen-start">
+  <div class="start-wrap">
 
-  <div class="start-logo">
-    <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <ellipse cx="40" cy="52" rx="12" ry="20" fill="#0a3d0a" transform="rotate(0,40,52)"/>
-      <ellipse cx="40" cy="52" rx="12" ry="20" fill="#1a6b1a" transform="rotate(30,40,52)"/>
-      <ellipse cx="40" cy="52" rx="12" ry="20" fill="#0a3d0a" transform="rotate(60,40,52)"/>
-      <ellipse cx="40" cy="52" rx="12" ry="20" fill="#1a6b1a" transform="rotate(90,40,52)"/>
-      <ellipse cx="40" cy="52" rx="12" ry="20" fill="#0a3d0a" transform="rotate(120,40,52)"/>
-      <ellipse cx="40" cy="52" rx="12" ry="20" fill="#2da02d" transform="rotate(150,40,52)"/>
-      <circle cx="40" cy="52" r="7" fill="#7fff00" opacity=".9"/>
-    </svg>
-    <div class="start-logo-name">Camará <span>Ambiental</span></div>
-    <div class="start-logo-sub">Zeladoria Urbana · Modo Patrulha</div>
-  </div>
+    <div class="start-logo">
+      <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="32" cy="32" r="21" stroke="#4ade80" stroke-width="2"/>
+        <circle cx="32" cy="32" r="3.5" fill="#4ade80"/>
+        <line x1="32" y1="2" x2="32" y2="11" stroke="#4ade80" stroke-width="2"/>
+        <line x1="32" y1="53" x2="32" y2="62" stroke="#4ade80" stroke-width="2"/>
+        <line x1="2" y1="32" x2="11" y2="32" stroke="#4ade80" stroke-width="2"/>
+        <line x1="53" y1="32" x2="62" y2="32" stroke="#4ade80" stroke-width="2"/>
+      </svg>
+      <div class="start-logo-name">VISTOR</div>
+      <div class="start-logo-sub">Patrulha Inteligente</div>
+    </div>
 
-  <div class="start-stats">
-    <div class="stat-item">
-      <div class="stat-val" id="qtdPontos">12</div>
-      <div class="stat-lbl">Pontos na Rota</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-val">~36</div>
-      <div class="stat-lbl">Fotos Previstas</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-val">30m</div>
-      <div class="stat-lbl">Raio de Captura</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-val">$0.30</div>
-      <div class="stat-lbl">Custo Estimado</div>
-    </div>
-  </div>
+    <div class="status-line" id="statusPontos">Carregando pontos...</div>
 
-  <button class="btn-start" onclick="iniciarPatrulha()">
-    ▶ Iniciar Patrulha
-  </button>
-  <button class="btn-secondary" onclick="abrirConfig()">
-    ⚙ Configurar Pontos
-  </button>
+    <button class="btn-start" onclick="iniciarPatrulha()">
+      Iniciar Patrulha
+    </button>
+    <button class="btn-secondary" onclick="abrirConfig()">
+      Configurar Pontos
+    </button>
 
-  <div class="perm-warning">
-    Será solicitado acesso à câmera e localização.<br>
-    Mantenha o app em primeiro plano durante a patrulha.
+    <div class="perm-warning">
+      Será solicitado acesso à câmera e localização.<br>
+      Mantenha o app em primeiro plano durante a patrulha.
+    </div>
   </div>
 </div>
 
@@ -328,14 +303,12 @@
     <video id="videoEl" autoplay muted playsinline></video>
 
     <div class="hud">
-      <!-- Corners -->
       <div class="corner tl"></div>
       <div class="corner tr"></div>
       <div class="corner bl"></div>
       <div class="corner br"></div>
       <div class="crosshair"></div>
 
-      <!-- Top bar -->
       <div class="hud-top">
         <div class="hud-rec">
           <div class="hud-rec-dot"></div>
@@ -344,17 +317,15 @@
         <div class="hud-time" id="hudTime">--:--</div>
       </div>
 
-      <!-- GPS -->
       <div class="hud-gps" id="hudGPS">
         GPS: aguardando...<br>
         ACC: —
       </div>
 
-      <!-- Bottom HUD -->
       <div class="hud-bottom">
         <div class="next-point-card">
-          <div class="np-label">▸ Próximo Ponto</div>
-          <div class="np-name" id="nextName">Av. Paulista 1000</div>
+          <div class="np-label">Próximo ponto</div>
+          <div class="np-name" id="nextName">—</div>
           <div class="np-info">
             <div class="np-dist" id="nextDist">— m</div>
             <div class="np-bar-wrap">
@@ -367,8 +338,8 @@
         </div>
 
         <div class="action-row">
-          <button class="btn-stop" onclick="pararPatrulha()">■ Parar</button>
-          <button class="btn-manual" onclick="capturarManual()">📷 Manual</button>
+          <button class="btn-stop" onclick="pararPatrulha()">Parar</button>
+          <button class="btn-manual" onclick="capturarManual()">Captura Manual</button>
         </div>
       </div>
     </div>
@@ -377,20 +348,22 @@
 
 <!-- ══ TELA 3: CAPTURANDO ══ -->
 <div class="screen hidden" id="screen-capture">
-  <div class="capture-anim"><div class="capture-icon">📷</div></div>
-  <div class="capture-title" id="captureTitle">Capturando...</div>
-  <div class="capture-sub" id="captureSub">Geofence detectada</div>
+  <div class="capture-wrap">
+    <div class="capture-anim"><div class="capture-icon">📷</div></div>
+    <div class="capture-title" id="captureTitle">Capturando...</div>
+    <div class="capture-sub" id="captureSub">Geofence detectada</div>
 
-  <div class="photo-counter">
-    <div class="photo-dot active" id="dot1">1</div>
-    <div class="photo-dot" id="dot2">2</div>
-    <div class="photo-dot" id="dot3">3</div>
-  </div>
+    <div class="photo-counter">
+      <div class="photo-dot active" id="dot1">1</div>
+      <div class="photo-dot" id="dot2">2</div>
+      <div class="photo-dot" id="dot3">3</div>
+    </div>
 
-  <div class="upload-status">
-    <div class="upload-label" id="uploadLabel">Aguardando câmera...</div>
-    <div class="upload-bar-track"><div class="upload-bar-fill" id="uploadBar"></div></div>
-    <div class="upload-label" id="uploadPct">0%</div>
+    <div class="upload-status">
+      <div class="upload-label" id="uploadLabel">Aguardando câmera...</div>
+      <div class="upload-bar-track"><div class="upload-bar-fill" id="uploadBar"></div></div>
+      <div class="upload-label" id="uploadPct">0%</div>
+    </div>
   </div>
 </div>
 
@@ -408,26 +381,32 @@ let capturando = false
 let tempoInicio = null
 let hudInterval = null
 
-// ══ CONFIGURAÇÃO — cole a URL do Apps Script após publicar ══
+// ══ CONFIGURAÇÃO ══
 const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxdugwVbrID_0_nRTbxB2BFNNtlQgNJh5hp9ErXCI_FaOzNdCbiDih8JvAYo_kiHmiYtQ/exec'
 
-// Pontos da rota — Recife e Região Metropolitana
-const pontos = [
-  { nome:'Av. Agamenon Magalhães', lat:-8.0518, lng:-34.8930 },
-  { nome:'Cais de Santa Rita',     lat:-8.0627, lng:-34.8717 },
-  { nome:'R. da Aurora',           lat:-8.0601, lng:-34.8813 },
-  { nome:'Av. Conde da Boa Vista', lat:-8.0671, lng:-34.8833 },
-  { nome:'Pátio do Carmo',         lat:-8.0635, lng:-34.8720 },
-  { nome:'Av. Beberibe — Ibura',   lat:-8.1052, lng:-34.9192 },
-  { nome:'R. Real da Torre',       lat:-8.0791, lng:-34.9153 },
-  { nome:'Av. Norte — Arruda',     lat:-8.0455, lng:-34.9007 },
-  { nome:'Olinda — R. do Amparo',  lat:-7.9988, lng:-34.8443 },
-  { nome:'Boa Viagem — Av. Boa Viagem', lat:-8.1270, lng:-34.9004 },
-  { nome:'Jaboatão — R. Agrestina',lat:-8.1121, lng:-35.0234 },
-  { nome:'Caruaru — Sulanca',      lat:-8.2760, lng:-35.9753 },
-]
+// Pontos carregados dinamicamente do Sheets (fallback local)
+let pontos = []
 const jaFotografou = {}
 let pontoAtualIdx = 0
+
+// ── Carrega pontos do backend (aba "Pontos" do Sheets) ──
+async function carregarPontos() {
+  try {
+    const resp = await fetch(BACKEND_URL + '?action=pontos')
+    const json = await resp.json()
+    if (json.ok && json.pontos && json.pontos.length > 0) {
+      pontos = json.pontos
+      document.getElementById('statusPontos').textContent = `${pontos.length} pontos carregados`
+      document.getElementById('statusPontos').style.color = 'var(--text2)'
+    } else {
+      document.getElementById('statusPontos').textContent = json.msg || 'Adicione pontos na aba "Pontos" do Sheets'
+      document.getElementById('statusPontos').style.color = 'var(--amber)'
+    }
+  } catch (e) {
+    document.getElementById('statusPontos').textContent = 'Sem conexão — modo offline'
+    document.getElementById('statusPontos').style.color = 'var(--amber)'
+  }
+}
 
 // ══════════════════════════════════════════
 //  NAVEGAÇÃO
@@ -496,10 +475,12 @@ function onPosicao(pos) {
     `GPS: ${lat}, ${lng}<br>ACC: ±${acc}m`
 
   // Verifica geofence em todos os pontos
+  // Raio efetivo = tolera a imprecisão do GPS (accuracy), com piso de 30m e teto de 80m
+  const raioEfetivo = Math.min(Math.max(30, acc), 80)
   pontos.forEach((ponto, idx) => {
     if (jaFotografou[ponto.nome]) return
     const dist = calcularDistancia(pos.coords, ponto)
-    if (dist < 30) {
+    if (dist < raioEfetivo) {
       jaFotografou[ponto.nome] = true
       capturarPonto(ponto)
       setTimeout(() => { jaFotografou[ponto.nome] = false }, 60000)
@@ -604,23 +585,23 @@ async function capturarPonto(ponto) {
           fotos: fotosBase64.filter(Boolean)
         })
       })
-      document.getElementById('uploadLabel').textContent = '🤖 GPT-4o Vision analisando...'
+      document.getElementById('uploadLabel').textContent = 'Analisando com IA...'
       setProgress(90)
       await esperar(1500)
     } else {
       // Sem backend configurado — simula para demo
-      document.getElementById('uploadLabel').textContent = '⚠ Backend não configurado (demo)'
+      document.getElementById('uploadLabel').textContent = 'Backend não configurado (demo)'
       setProgress(90)
       await esperar(800)
     }
   } catch(e) {
-    document.getElementById('uploadLabel').textContent = '⚠ Erro de conexão — dado salvo localmente'
+    document.getElementById('uploadLabel').textContent = 'Erro de conexão — dado salvo localmente'
     setProgress(90)
     await esperar(800)
   }
 
   setProgress(100)
-  document.getElementById('uploadPct').textContent = '✓ Concluído'
+  document.getElementById('uploadPct').textContent = 'Concluído'
   document.getElementById('captureTitle').textContent = 'Registrado!'
   document.getElementById('uploadLabel').textContent = `${ponto.nome} — análise enviada`
 
@@ -699,7 +680,12 @@ function resetDots() {
 function setDotActive(i) { document.getElementById('dot'+i).className = 'photo-dot active' }
 function setDotDone(i)   { document.getElementById('dot'+i).className = 'photo-dot done'; document.getElementById('dot'+i).textContent = '✓' }
 
-function abrirConfig() { alert('Em breve: editor de pontos via Google Sheets') }
+function abrirConfig() {
+  window.open('https://docs.google.com/spreadsheets/d/1xd0BZXiSiYtAmSjnffNRlSzNtyJTQx-CtbbAwxEY6TU/edit', '_blank')
+}
+
+// Carrega pontos ao abrir o app
+carregarPontos()
 </script>
 </body>
 </html>
