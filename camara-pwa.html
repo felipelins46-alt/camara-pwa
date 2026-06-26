@@ -113,7 +113,17 @@
   }
   .mapa-titulo { font-size:14px; font-weight:700; color:var(--text); }
 
-  #mapaPontos { flex:1; width:100%; background:#1a1a1a; }
+  .mapa-area { position:relative; flex:1; }
+  #mapaPontos { position:absolute; inset:0; background:#1a1a1a; }
+
+  .mapa-locate-btn {
+    position:absolute; right:14px; bottom:14px; z-index:500;
+    width:46px; height:46px; border-radius:50%; border:1px solid var(--border);
+    background:var(--surface2); display:flex; align-items:center; justify-content:center;
+    box-shadow:0 2px 10px rgba(0,0,0,.45); cursor:pointer;
+  }
+  .mapa-locate-btn:active { transform:scale(0.93); }
+  .mapa-locate-btn svg { width:22px; height:22px; }
 
   .mapa-dica {
     flex-shrink:0; padding:12px 16px; text-align:center;
@@ -121,21 +131,48 @@
     border-top:1px solid var(--border);
   }
 
-  .leaflet-popup-content-wrapper, .leaflet-popup-tip {
-    background:var(--surface2); color:var(--text);
+  /* Leaflet — adapta controles ao tema escuro */
+  .leaflet-control-zoom a {
+    background:var(--surface2) !important; color:var(--text) !important;
+    border-color:var(--border) !important;
   }
-  .popup-ponto-nome { font-weight:700; font-size:13px; margin-bottom:6px; display:block; }
-  .popup-ponto-input {
-    width:100%; padding:8px; margin-bottom:8px; border-radius:8px;
+  .leaflet-bar { border:none !important; box-shadow:0 2px 8px rgba(0,0,0,.4) !important; }
+  .leaflet-control-attribution {
+    background:rgba(20,20,20,.7) !important; color:var(--text3) !important;
+  }
+  .leaflet-control-attribution a { color:var(--text2) !important; }
+
+  /* Bottom sheet — adicionar/remover ponto */
+  .mapa-backdrop {
+    position:fixed; inset:0; background:rgba(0,0,0,.55);
+    opacity:0; pointer-events:none; transition:opacity .25s; z-index:998;
+  }
+  .mapa-backdrop.show { opacity:1; pointer-events:auto; }
+
+  .mapa-sheet {
+    position:fixed; left:0; right:0; bottom:0; z-index:999;
+    background:var(--surface); border-top:1px solid var(--border);
+    border-radius:20px 20px 0 0; padding:14px 20px max(24px, env(safe-area-inset-bottom));
+    transform:translateY(115%); transition:transform .3s cubic-bezier(.32,.72,0,1);
+  }
+  .mapa-sheet.show { transform:translateY(0); }
+
+  .mapa-sheet-handle { width:36px; height:4px; border-radius:4px; background:var(--border); margin:0 auto 16px; }
+  .mapa-sheet-titulo { font-size:16px; font-weight:700; color:var(--text); margin-bottom:14px; }
+  .mapa-sheet-input {
+    width:100%; padding:14px; margin-bottom:12px; border-radius:12px;
     border:1px solid var(--border); background:var(--bg); color:var(--text);
-    font-family:inherit; font-size:13px; box-sizing:border-box;
+    font-family:inherit; font-size:15px; box-sizing:border-box;
   }
-  .popup-btn {
-    width:100%; padding:8px; border-radius:8px; border:none; cursor:pointer;
-    font-family:inherit; font-size:12px; font-weight:700; margin-top:4px;
+  .mapa-sheet-btn {
+    width:100%; padding:15px; border-radius:12px; border:none; cursor:pointer;
+    font-family:inherit; font-size:14px; font-weight:700; margin-bottom:10px;
+    transition: transform .15s, opacity .15s;
   }
-  .popup-btn-salvar { background:var(--green); color:#0a0a0a; }
-  .popup-btn-remover { background:var(--red); color:#fff; }
+  .mapa-sheet-btn:active { transform:scale(0.97); opacity:.9; }
+  .mapa-sheet-btn-primario { background:var(--green); color:#0a0a0a; }
+  .mapa-sheet-btn-perigo { background:var(--red); color:#fff; }
+  .mapa-sheet-btn-cancelar { background:transparent; color:var(--text2); border:1px solid var(--border); margin-bottom:0; }
 
   /* ══════════════════════════════
      TELA 2 — PATRULHA ATIVA
@@ -346,8 +383,22 @@
     <div class="mapa-titulo">Configurar Pontos</div>
     <button class="mapa-voltar" onclick="abrirConfig()">Planilha</button>
   </div>
-  <div id="mapaPontos"></div>
+  <div class="mapa-area">
+    <div id="mapaPontos"></div>
+    <button class="mapa-locate-btn" onclick="centralizarNoGPS()" aria-label="Minha localização">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="12" r="3" fill="#4ade80"/>
+        <path d="M12 2v4M12 18v4M2 12h4M18 12h4" stroke="#4ade80" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
   <div class="mapa-dica" id="mapaDica">Toque no mapa para adicionar um ponto</div>
+</div>
+
+<div class="mapa-backdrop" id="mapaBackdrop" onclick="fecharMapaSheet()"></div>
+<div class="mapa-sheet" id="mapaSheet">
+  <div class="mapa-sheet-handle"></div>
+  <div id="mapaSheetContent"></div>
 </div>
 
 <!-- ══ TELA 2: PATRULHA ATIVA ══ -->
@@ -598,7 +649,7 @@ async function capturarPonto(ponto) {
     await esperar(400)
     flash()
 
-    const foto = capturarFrameComoBase64()
+    const foto = await capturarFrameComoBase64()
     fotos.push(foto)
     setDotDone(i)
     setProgress((i/3)*60)
@@ -691,12 +742,23 @@ function esperar(ms) { return new Promise(r => setTimeout(r, ms)) }
 
 // Captura o frame atual direto do <video> via canvas — muito mais confiável
 // que ImageCapture.takePhoto(), que falha em vários Android/Chrome mesmo parado.
-function capturarFrameComoBase64() {
+// Espera o vídeo ter ao menos um frame real disponível antes de capturar —
+// evita o bug de "Nenhuma foto recebida" quando a captura dispara antes da
+// câmera estar pronta (ex: logo após iniciar a patrulha).
+async function capturarFrameComoBase64() {
+  const video = document.getElementById('videoEl')
+
+  let tentativas = 0
+  while ((!video.videoWidth || video.readyState < 2) && tentativas < 20) {
+    await esperar(100)
+    tentativas++
+  }
+
   try {
-    const video = document.getElementById('videoEl')
+    if (!video.videoWidth) return null // câmera realmente não ficou pronta a tempo
     const canvas = document.createElement('canvas')
-    canvas.width = video.videoWidth || 1920
-    canvas.height = video.videoHeight || 1080
+    canvas.width = video.videoWidth
+    canvas.height = video.videoHeight
     const ctx = canvas.getContext('2d')
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
     return canvas.toDataURL('image/jpeg', 0.9)
@@ -749,15 +811,10 @@ function abrirMapaPontos() {
     mapaCamadaPontos = L.layerGroup().addTo(mapaInstancia)
 
     // Clique no mapa = novo ponto
-    mapaInstancia.on('click', (e) => abrirPopupNovoPonto(e.latlng.lat, e.latlng.lng))
+    mapaInstancia.on('click', (e) => abrirSheetNovoPonto(e.latlng.lat, e.latlng.lng))
 
     // Centraliza no GPS atual, se disponível
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => mapaInstancia.setView([pos.coords.latitude, pos.coords.longitude], 15),
-        () => {} // mantém o centro padrão se o usuário negar/não tiver GPS
-      )
-    }
+    centralizarNoGPS(13)
   }
 
   // Sempre recarrega os marcadores ao abrir (pega o que tiver de mais recente)
@@ -765,7 +822,17 @@ function abrirMapaPontos() {
 }
 
 function fecharMapaPontos() {
+  fecharMapaSheet()
   mostrarTela('screen-start')
+}
+
+function centralizarNoGPS(zoom) {
+  if (!mapaInstancia || !navigator.geolocation) return
+  navigator.geolocation.getCurrentPosition(
+    (pos) => mapaInstancia.setView([pos.coords.latitude, pos.coords.longitude], zoom || 16),
+    () => { document.getElementById('mapaDica').textContent = 'Não foi possível obter sua localização.' },
+    { enableHighAccuracy: true, timeout: 8000 }
+  )
 }
 
 function desenharPontosNoMapa() {
@@ -773,44 +840,55 @@ function desenharPontosNoMapa() {
   mapaCamadaPontos.clearLayers()
 
   pontos.forEach((p) => {
-    const marcador = L.circleMarker([p.lat, p.lng], {
-      radius: 9, color: '#4ade80', weight: 2, fillColor: '#4ade80', fillOpacity: 0.5
-    })
-    L.circle([p.lat, p.lng], { radius: 50, color: '#4ade80', weight: 1, fillOpacity: 0.05, opacity: 0.4 })
+    L.circle([p.lat, p.lng], { radius: 50, color: '#4ade80', weight: 1, fillOpacity: 0.05, opacity: 0.35 })
       .addTo(mapaCamadaPontos)
-    marcador.addTo(mapaCamadaPontos)
-    marcador.bindPopup(popupPontoExistente(p))
+
+    const marcador = L.circleMarker([p.lat, p.lng], {
+      radius: 11, color: '#0a0a0a', weight: 2, fillColor: '#4ade80', fillOpacity: 0.95
+    }).addTo(mapaCamadaPontos)
+
+    marcador.on('click', () => abrirSheetRemoverPonto(p))
   })
 }
 
-function popupPontoExistente(p) {
-  const div = document.createElement('div')
-  div.innerHTML = `
-    <span class="popup-ponto-nome">${p.nome}</span>
-    <button class="popup-btn popup-btn-remover">Remover ponto</button>
-  `
-  div.querySelector('.popup-btn-remover').onclick = () => removerPontoDoMapa(p)
-  return div
+// ── Bottom sheet (adicionar / remover ponto) ──
+function mostrarMapaSheet() {
+  document.getElementById('mapaBackdrop').classList.add('show')
+  document.getElementById('mapaSheet').classList.add('show')
 }
 
-function abrirPopupNovoPonto(lat, lng) {
-  const div = document.createElement('div')
-  div.innerHTML = `
-    <span class="popup-ponto-nome">Novo ponto</span>
-    <input class="popup-ponto-input" type="text" placeholder="Nome do local" id="inputNovoPonto">
-    <button class="popup-btn popup-btn-salvar">Salvar ponto</button>
-  `
-  div.querySelector('.popup-btn-salvar').onclick = () => salvarNovoPonto(lat, lng)
+function fecharMapaSheet() {
+  document.getElementById('mapaBackdrop').classList.remove('show')
+  document.getElementById('mapaSheet').classList.remove('show')
+}
 
-  L.popup().setLatLng([lat, lng]).setContent(div).openOn(mapaInstancia)
-  setTimeout(() => document.getElementById('inputNovoPonto')?.focus(), 100)
+function abrirSheetNovoPonto(lat, lng) {
+  document.getElementById('mapaSheetContent').innerHTML = `
+    <div class="mapa-sheet-titulo">Novo ponto</div>
+    <input class="mapa-sheet-input" type="text" placeholder="Nome do local" id="inputNovoPonto">
+    <button class="mapa-sheet-btn mapa-sheet-btn-primario" id="btnSalvarPonto">Salvar ponto</button>
+    <button class="mapa-sheet-btn mapa-sheet-btn-cancelar" onclick="fecharMapaSheet()">Cancelar</button>
+  `
+  document.getElementById('btnSalvarPonto').onclick = () => salvarNovoPonto(lat, lng)
+  mostrarMapaSheet()
+  setTimeout(() => document.getElementById('inputNovoPonto')?.focus(), 280)
+}
+
+function abrirSheetRemoverPonto(p) {
+  document.getElementById('mapaSheetContent').innerHTML = `
+    <div class="mapa-sheet-titulo">${p.nome}</div>
+    <button class="mapa-sheet-btn mapa-sheet-btn-perigo" id="btnRemoverPonto">Remover ponto</button>
+    <button class="mapa-sheet-btn mapa-sheet-btn-cancelar" onclick="fecharMapaSheet()">Cancelar</button>
+  `
+  document.getElementById('btnRemoverPonto').onclick = () => removerPontoDoMapa(p)
+  mostrarMapaSheet()
 }
 
 async function salvarNovoPonto(lat, lng) {
   const nome = document.getElementById('inputNovoPonto')?.value.trim()
-  if (!nome) { alert('Dê um nome para o ponto.'); return }
+  if (!nome) { document.getElementById('inputNovoPonto').focus(); return }
 
-  document.getElementById('mapaDica').textContent = 'Salvando ponto...'
+  document.getElementById('btnSalvarPonto').textContent = 'Salvando...'
   try {
     const resp = await fetch(BACKEND_URL, {
       method: 'POST',
@@ -819,7 +897,7 @@ async function salvarNovoPonto(lat, lng) {
     })
     const json = await resp.json()
     if (json.ok) {
-      mapaInstancia.closePopup()
+      fecharMapaSheet()
       await carregarPontos()
       desenharPontosNoMapa()
       document.getElementById('mapaDica').textContent = 'Ponto salvo! Toque no mapa para adicionar outro.'
@@ -832,9 +910,7 @@ async function salvarNovoPonto(lat, lng) {
 }
 
 async function removerPontoDoMapa(p) {
-  if (!confirm(`Remover o ponto "${p.nome}"?`)) return
-
-  document.getElementById('mapaDica').textContent = 'Removendo ponto...'
+  document.getElementById('btnRemoverPonto').textContent = 'Removendo...'
   try {
     const resp = await fetch(BACKEND_URL, {
       method: 'POST',
@@ -843,7 +919,7 @@ async function removerPontoDoMapa(p) {
     })
     const json = await resp.json()
     if (json.ok) {
-      mapaInstancia.closePopup()
+      fecharMapaSheet()
       await carregarPontos()
       desenharPontosNoMapa()
       document.getElementById('mapaDica').textContent = 'Ponto removido.'
